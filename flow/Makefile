@@ -51,7 +51,7 @@
 # DESIGN_CONFIG=./designs/gf12/bp_quad/config.mk
 
 # DESIGN_CONFIG=./designs/sky130hd/gcd/config.mk
-# DESIGN_CONFIG=./designs/sky130hd/ibex/config.mk
+ DESIGN_CONFIG=./designs/sky130hd/ibex/config.mk
 # DESIGN_CONFIG=./designs/sky130hd/aes/config.mk
 # DESIGN_CONFIG=./designs/sky130hd/jpeg/config.mk
 # DESIGN_CONFIG=./designs/sky130hd/coyote_tc/config.mk
@@ -77,7 +77,7 @@
 # DESIGN_CONFIG=./designs/intel22/aes/config.mk
 #
 # Default design
-DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
+#DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
 
 # If we are running headless use offscreen rendering for save_image
 ifndef DISPLAY
@@ -99,7 +99,7 @@ endif
 
 #-------------------------------------------------------------------------------
 # Proper way to initiate SHELL for make
-SHELL          ?= /bin/bash
+SHELL          = /bin/bash
 .SHELLFLAGS    = -o pipefail -c
 
 #-------------------------------------------------------------------------------
@@ -735,10 +735,13 @@ $(foreach file,$(RESULTS_DEF) $(RESULTS_GDS) $(RESULTS_OAS),klayout_$(file)): kl
 	$(KLAYOUT_CMD) -nn $(OBJECTS_DIR)/klayout.lyt $(RESULTS_DIR)/$*
 
 gui_final: gui_6_final.def
-
 $(foreach file,$(RESULTS_DEF),gui_$(file)): gui_%:
 	DEF_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/gui.tcl
+print-%  : ; @echo $* = $($*)
 
+my_gui: gui_6_final.def
+$(foreach file,$(RESULTS_DEF),gui_$(file)): gui_%:
+	DEF_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
 print-%  : ; @echo $* = $($*)
 
 # Utilities
