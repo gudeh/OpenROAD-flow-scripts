@@ -46,7 +46,7 @@ if {$design_stage >= 6 && [file exist $::env(RESULTS_DIR)/6_final.spef]} {
   estimate_parasitics -placement
 }
 
-set dut gatePosition_
+set dut gatesPosition_
 set myname ${dut}${::env(DESIGN_NAME)}.csv
 set myout [open $myname w]
 puts $myout "Name,xMin,yMin,xMax,yMax"
@@ -60,6 +60,18 @@ close $myout
 # Cleanup temporary variables
 unset sdc_file s design_stage
 
-puts "exit"
-exit
-gui::dump_heatmap Placement myPlaces.csv
+set dut placementHeat_
+set myname ${dut}${::env(DESIGN_NAME)}.csv
+gui::dump_heatmap Placement $myname
+
+set dut powerHeat_
+set myname ${dut}${::env(DESIGN_NAME)}.csv
+gui::dump_heatmap Power $myname
+
+set dut routingHeat_
+set myname ${dut}${::env(DESIGN_NAME)}.csv
+gui::dump_heatmap Routing $myname
+
+set dut irdropHeat_
+set myname ${dut}${::env(DESIGN_NAME)}.csv
+gui::dump_heatmap IRDrop $myname

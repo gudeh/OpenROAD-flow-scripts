@@ -23,6 +23,7 @@ flow/default.svf
 flow/rc_model.bin
 flow/*.tif.gz
 flow/*.def.v
+flow/*.csv
 
 
 # RePlAce deps
