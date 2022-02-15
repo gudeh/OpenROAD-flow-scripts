@@ -1,0 +1,2 @@
+./designs/nangate45/gcd/config.mk
+./designs/nangate45/aes/config.mk
