@@ -742,8 +742,6 @@ print-%  : ; @echo $* = $($*)
 my_gui: my_gui_6_final.def
 $(foreach file,$(RESULTS_DEF),my_gui_$(file)): my_gui_%:
 	DEF_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
-	
-	python3 myStuff/gateToHeat.py > myStuff/Python.out
 #print-%  : ; @echo $* = $($*)
 
 # Utilities

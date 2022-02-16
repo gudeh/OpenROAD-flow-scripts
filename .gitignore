@@ -68,3 +68,8 @@ core
 core.*
 
 *~
+
+#my things
+flow/myStuff/*
+!flow/myStuff/designsToRun.txt
+!flow/myStuff/gateToHeat.py

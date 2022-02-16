@@ -79,5 +79,4 @@ gui::dump_heatmap Power $myname
 #set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
 #gui::dump_heatmap IRDrop $myname
 
-gui::hide
-exit
+#gui::hide
