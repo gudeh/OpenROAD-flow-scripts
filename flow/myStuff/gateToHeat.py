@@ -56,9 +56,12 @@ print("all_projects directories:",all_projects)
 for projects in all_projects:
 	projects=root+"/"+projects
 	print (projects)
-	all_csvs = glob.glob(projects+"/*.csv")
-	print(len(all_csvs),all_csvs)
-	gate_files=[myfile for myfile in all_csvs if "gates" in myfile]
+#	heat_csvs = glob.glob(projects+"/*.csv")
+	heat_csvs = glob.glob(projects+"/[!DGL]*.csv")
+	yosys_csvs= glob.glob(projects+"/DGL*.csv")
+	print("all YOSYS csvs in project",len(yosys_csvs),yosys_csvs)
+	print("all HEAT csvs in project",len(heat_csvs),heat_csvs)
+	gate_files=[myfile for myfile in heat_csvs if "gates" in myfile]
 	gate_df=pd.read_csv(gate_files[0])
 	print("this length should be ==1 >>",len(gate_files),gate_files)
 
@@ -77,7 +80,7 @@ for projects in all_projects:
 	print("Loaded gates position objects!")
 	print("size:",len(all_gates))
 	
-	heat_files=[myfile for myfile in all_csvs if "gates" not in myfile]
+	heat_files=[myfile for myfile in heat_csvs if "gates" not in myfile]
 	for heat_file in heat_files:
 		start_time = int(datetime.now().timestamp())
 		if "placement" in heat_file:

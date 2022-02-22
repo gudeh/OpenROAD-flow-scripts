@@ -46,6 +46,10 @@ if {$design_stage >= 6 && [file exist $::env(RESULTS_DIR)/6_final.spef]} {
   estimate_parasitics -placement
 }
 
+#moving yosys outpupt files (it doesnt have access to design names)
+file rename -force myStuff/DGLedges.csv myStuff/${::env(DESIGN_NAME)}/DGLedges.csv
+file rename -force myStuff/DGLcells.csv myStuff/${::env(DESIGN_NAME)}/DGLcells.csv
+
 set dirPath myStuff/${::env(DESIGN_NAME)}
 file mkdir $dirPath
 #file attributes $path -owner system
@@ -80,3 +84,4 @@ gui::dump_heatmap Power $myname
 #gui::dump_heatmap IRDrop $myname
 
 #gui::hide
+exit
