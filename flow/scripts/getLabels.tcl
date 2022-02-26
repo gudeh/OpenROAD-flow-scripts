@@ -46,13 +46,14 @@ if {$design_stage >= 6 && [file exist $::env(RESULTS_DIR)/6_final.spef]} {
   estimate_parasitics -placement
 }
 
+
+set dirPath myStuff/${::env(DESIGN_NAME)}
+file mkdir $dirPath
+
 #moving yosys outpupt files (it doesnt have access to design names)
 file rename -force myStuff/DGLedges.csv myStuff/${::env(DESIGN_NAME)}/DGLedges.csv
 file rename -force myStuff/DGLcells.csv myStuff/${::env(DESIGN_NAME)}/DGLcells.csv
 
-set dirPath myStuff/${::env(DESIGN_NAME)}
-file mkdir $dirPath
-#file attributes $path -owner system
 set dut gatesPosition_
 set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
 set myout [open $myname w]

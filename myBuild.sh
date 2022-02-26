@@ -1,6 +1,6 @@
-sudo git submodule foreach git pull origin master
-git checkout master
-git fetch --all
-git merge origin/master
-git clean -xdf ./tools
+git submodule foreach git pull origin master
 ./build_openroad.sh --local --latest --no_init
+
+#if [$1 == "run"]
+#	then cd flow && ./myRunAll.sh
+#fi
