@@ -78,6 +78,8 @@ if {[info exist ::env(ABC_CLOCK_PERIOD_IN_PS)]} {
       -constr $::env(OBJECTS_DIR)/abc.constr
 }
 
+
+
 # Replace undef values with defined constants
 setundef -zero
 
@@ -108,4 +110,4 @@ tee -o $::env(REPORTS_DIR)/synth_stat.txt stat {*}$stat_libs
 # Write synthesized design
 write_verilog -noattr -noexpr -nohex -nodec $::env(RESULTS_DIR)/1_1_yosys.v
 
-hello_world
+#hello_world

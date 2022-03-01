@@ -65,8 +65,6 @@ foreach inst [$block getInsts] {
 }
 close $myout
 
-# Cleanup temporary variables
-unset sdc_file s design_stage
 
 set dut placementHeat_
 set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
@@ -76,13 +74,17 @@ set dut powerHeat_
 set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
 gui::dump_heatmap Power $myname
 
-#set dut routingHeat_
-#set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
-#gui::dump_heatmap Routing $myname
+read_guides $::env(RESULTS_DIR)/route.guide
+set dut routingHeat_
+set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
+gui::dump_heatmap Routing $myname
 
-#set dut irdropHeat_
-#set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
-#gui::dump_heatmap IRDrop $myname
+analyze_power_grid -net VDD
+set dut irdropHeat_
+set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
+gui::dump_heatmap IRDrop $myname
 
-#gui::hide
+# Cleanup temporary variables
+unset sdc_file s design_stage
+
 exit

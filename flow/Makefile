@@ -8,7 +8,7 @@
 # DESIGN_CONFIG=./designs/nangate45/bp_fe_top/config.mk
 # DESIGN_CONFIG=./designs/nangate45/bp_multi_top/config.mk
 # DESIGN_CONFIG=./designs/nangate45/dynamic_node/config.mk
-# DESIGN_CONFIG=./designs/nangate45/gcd/config.mk
+ DESIGN_CONFIG=./designs/nangate45/gcd/config.mk
 # DESIGN_CONFIG=./designs/nangate45/ibex/config.mk
 # DESIGN_CONFIG=./designs/nangate45/jpeg/config.mk
 # DESIGN_CONFIG=./designs/nangate45/swerv/config.mk
@@ -77,7 +77,7 @@
 # DESIGN_CONFIG=./designs/intel22/aes/config.mk
 #
 # Default design
-DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
+#DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
 
 # If we are running headless use offscreen rendering for save_image
 ifndef DISPLAY
@@ -354,6 +354,7 @@ synth: versions.txt \
 # Run Synthesis using yosys
 #-------------------------------------------------------------------------------
 SYNTH_SCRIPT ?= $(SCRIPTS_DIR)/synth.tcl
+MY_SCRIPT ?= $(SCRIPTS_DIR)/getFeatures.tcl
 
 $(SYNTH_STOP_MODULE_SCRIPT):
 	mkdir -p $(RESULTS_DIR) $(LOG_DIR) $(REPORTS_DIR)
@@ -366,7 +367,10 @@ endif
 $(RESULTS_DIR)/1_1_yosys.v: $(DONT_USE_LIBS) $(WRAPPED_LIBS) $(DONT_USE_SC_LIB) $(DFF_LIB_FILE) $(VERILOG_FILES) $(CACHED_NETLIST) $(LATCH_MAP_FILE) $(ADDER_MAP_FILE)
 	mkdir -p $(RESULTS_DIR) $(LOG_DIR) $(REPORTS_DIR)
 	($(TIME_CMD) $(YOSYS_CMD) $(YOSYS_FLAGS) -c $(SYNTH_SCRIPT)) 2>&1 | tee $(LOG_DIR)/1_1_yosys.log
-
+	
+getFeatures: 
+	($(TIME_CMD) $(YOSYS_CMD) $(YOSYS_FLAGS) -c $(MY_SCRIPT)) 2>&1 | tee $(LOG_DIR)/my.log
+	
 $(RESULTS_DIR)/1_synth.v: $(RESULTS_DIR)/1_1_yosys.v
 	mkdir -p $(RESULTS_DIR) $(LOG_DIR) $(REPORTS_DIR)
 	cp $< $@
