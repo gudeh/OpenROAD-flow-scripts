@@ -2,8 +2,10 @@ import pandas as pd
 import numpy as np #np.nan
 import glob
 import os
+import sys #command line argument
 import time
 from datetime import datetime, timedelta
+import shutil #copy file
 
 
 class gate:
@@ -52,23 +54,47 @@ class heatBbox:
 		message=self.name+"\t("+'%.1f'%self.x0+";"+'%.1f'%self.y0+";"+'%.1f'%self.x1+";"+'%.1f'%self.y1+"),w-"+'%.1f'%self.width+",h-"+'%.1f'%self.height+",v-"+'%.1f'%self.value
 		return message
 
-
+print (sys.argv[1:])
 root="./myStuff"
-all_projects = [name for name in os.listdir(root) if os.path.isdir(os.path.join(root,name))]
-print("all_projects directories:",all_projects)
+time_log = open(root+"/time_log_gateToHeat.txt","w")
+projects_times={}
+start_all = int(datetime.now().timestamp())
+
+#not working cause of env variable!
+if len(sys.argv) > 1:
+	# design_config=sys.argv[1]
+	# print("design_config",design_config)
+	# design_config=design_config.replace("./designs/","")
+	# print("design_config",design_config)
+	# tech=design_config[:design_config.find("/")]
+	# print("tech:",tech)
+	# design_config=design_config.replace(design_config[:design_config.find("/")+1],"")
+	# print("design_config",design_config)
+	# design=design_config[:design_config.find("/")]
+	# print("design",design)
+	design=sys.argv[1]
+	all_projects=[]
+	all_projects.append(sys.argv[1])
+else:	
+	all_projects = [name for name in os.listdir(root) if os.path.isdir(os.path.join(root,name)) and "myDataSet" not in name]
+
+print("all_projects directories:",all_projects)	
 for projects in all_projects:
+	start_time_project = int(datetime.now().timestamp())
 	projects=root+"/"+projects
 	print (projects)
-	if os.path.exists(projects+"/outDGLcells.csv"):
-		os.remove(projects+"/outDGLcells.csv")
-#	heat_csvs = glob.glob(projects+"/*.csv")
-	heat_csvs = glob.glob(projects+"/[!DGL]*.csv")
+	if os.path.exists(projects+"/DGLcells_labeled.csv"):
+		os.remove(projects+"/DGLcells_labeled.csv")
+		#continue		
+
+	heat_csvs = glob.glob(projects+"/*Heat*.csv")
 #	feature_csvs= glob.glob(projects+"/DGL*.csv")
 #	print("all YOSYS csvs in project",len(feature_csvs),feature_csvs)
 	print("all HEAT csvs in project",len(heat_csvs),heat_csvs)
-	position_files=[myfile for myfile in heat_csvs if "gatesPosition" in myfile]
-	positions_df=pd.read_csv(position_files[0])
+	position_files=[myfile for myfile in glob.glob(projects+"/*gatesPosition*.csv")]# if "gatesPosition" in myfile]
 	print("this length should be == 1:",len(position_files),position_files)
+	positions_df=pd.read_csv(position_files[0])
+
 
 	print(positions_df.head)
 	all_gates={}
@@ -88,7 +114,7 @@ for projects in all_projects:
 	
 	heat_files=[myfile for myfile in heat_csvs if "gates" not in myfile]
 	for heat_file in heat_files:
-		start_time = int(datetime.now().timestamp())
+		start_time_heats = int(datetime.now().timestamp())
 		if "placement" in heat_file:
 			heat_type="placement"
 		elif "power" in heat_file:
@@ -125,33 +151,34 @@ for projects in all_projects:
 #						print(mygate.x0,"<=",myheat.x1,mygate.x0 <= myheat.x1,"and",mygate.x1,">=",myheat.x0,mygate.x1 >= myheat.x0,"and",mygate.y1,">=",myheat.y0, mygate.y1 >= myheat.y0, mygate.y0 <= myheat.y1,"and",mygate.y0,"<=",myheat.y1)
 					if mygate.x0 <= myheat.x1 and mygate.x1 >= myheat.x0 and mygate.y1 >= myheat.y0 and mygate.y0 <= myheat.y1:
 						mygate.heat_placement.append(myheat.value)
-						if len(mygate.heat_placement) > 4:
-							print("ERROR, impossible for a gate to be in more than 1 bbox?",mygate.name)
+						# if len(mygate.heat_placement) > 4:
+						# 	print("ERROR, impossible for a gate to be in more than 1 bbox?",mygate.name)
 		if heat_type=="power":
 			for key,mygate in all_gates.items():
 				for myheat in all_heats:
-					if len(mygate.heat_power) <= 4:
-#						print(mygate.x0,"<=",myheat.x1,mygate.x0 <= myheat.x1,"and",mygate.x1,">=",myheat.x0,mygate.x1 >= myheat.x0,"and",mygate.y1,">=",myheat.y0, mygate.y1 >= myheat.y0, mygate.y0 <= myheat.y1,"and",mygate.y0,"<=",myheat.y1)
-						if mygate.x0 <= myheat.x1 and mygate.x1 >= myheat.x0 and mygate.y1 >= myheat.y0 and mygate.y0 <= myheat.y1:
-							mygate.heat_power.append(myheat.value)
+				# if len(mygate.heat_power) <= 4:
+					# print(mygate.x0,"<=",myheat.x1,mygate.x0 <= myheat.x1,"and",mygate.x1,">=",myheat.x0,mygate.x1 >= myheat.x0,"and",mygate.y1,">=",myheat.y0, mygate.y1 >= myheat.y0, mygate.y0 <= myheat.y1,"and",mygate.y0,"<=",myheat.y1)
+					if mygate.x0 <= myheat.x1 and mygate.x1 >= myheat.x0 and mygate.y1 >= myheat.y0 and mygate.y0 <= myheat.y1:
+						mygate.heat_power.append(myheat.value)
 							
 		if heat_type=="routing":
 			for key,mygate in all_gates.items():
 				for myheat in all_heats:
-					if len(mygate.heat_routing) <= 4:
-#						print(mygate.x0,"<=",myheat.x1,mygate.x0 <= myheat.x1,"and",mygate.x1,">=",myheat.x0,mygate.x1 >= myheat.x0,"and",mygate.y1,">=",myheat.y0, mygate.y1 >= myheat.y0, mygate.y0 <= myheat.y1,"and",mygate.y0,"<=",myheat.y1)
-						if mygate.x0 <= myheat.x1 and mygate.x1 >= myheat.x0 and mygate.y1 >= myheat.y0 and mygate.y0 <= myheat.y1:
-							mygate.heat_routing.append(myheat.value)
+					# if len(mygate.heat_routing) <= 4:
+					# 	print(mygate.x0,"<=",myheat.x1,mygate.x0 <= myheat.x1,"and",mygate.x1,">=",myheat.x0,mygate.x1 >= myheat.x0,"and",mygate.y1,">=",myheat.y0, mygate.y1 >= myheat.y0, mygate.y0 <= myheat.y1,"and",mygate.y0,"<=",myheat.y1)
+					if mygate.x0 <= myheat.x1 and mygate.x1 >= myheat.x0 and mygate.y1 >= myheat.y0 and mygate.y0 <= myheat.y1:
+						mygate.heat_routing.append(myheat.value)
 		if heat_type=="irdrop":
 			for key,mygate in all_gates.items():
 				for myheat in all_heats:
-					if len(mygate.heat_irdrop) <= 4:
-#						print(mygate.x0,"<=",myheat.x1,mygate.x0 <= myheat.x1,"and",mygate.x1,">=",myheat.x0,mygate.x1 >= myheat.x0,"and",mygate.y1,">=",myheat.y0, mygate.y1 >= myheat.y0, mygate.y0 <= myheat.y1,"and",mygate.y0,"<=",myheat.y1)
-						if mygate.x0 <= myheat.x1 and mygate.x1 >= myheat.x0 and mygate.y1 >= myheat.y0 and mygate.y0 <= myheat.y1:
-							mygate.heat_irdrop.append(myheat.value)
+					# if len(mygate.heat_irdrop) <= 4:
+					# 	print(mygate.x0,"<=",myheat.x1,mygate.x0 <= myheat.x1,"and",mygate.x1,">=",myheat.x0,mygate.x1 >= myheat.x0,"and",mygate.y1,">=",myheat.y0, mygate.y1 >= myheat.y0, mygate.y0 <= myheat.y1,"and",mygate.y0,"<=",myheat.y1)
+					if mygate.x0 <= myheat.x1 and mygate.x1 >= myheat.x0 and mygate.y1 >= myheat.y0 and mygate.y0 <= myheat.y1:
+						mygate.heat_irdrop.append(myheat.value)
 		
-		finish_time = int(datetime.now().timestamp())
-		print("time for all gates:",(finish_time-start_time),"-",heat_type,flush=True)
+		finish_time_heats = int(datetime.now().timestamp())
+		print("time for all gates:",(finish_time_heats-start_time_heats),"-",heat_type,flush=True)
+		time_log.write(projects+" time to load heats for all gates:"+str(finish_time_heats-start_time_heats)+"-"+str(heat_type))
 #	for key,mygate in all_gates.items():
 #		print(mygate)
 	df_cells=pd.read_csv(projects+"/DGLcells.csv")	
@@ -176,6 +203,26 @@ for projects in all_projects:
 	print("#cells in last heat_df:",heat_df.shape[0],"last heat:",heat_type,"(from gui::dump command)")
 	print("#cells in both heatmap and DGLScells.csv:",present_cell)
 	
-	df_cells.to_csv(projects+"/outDGLcells.csv",index=False)
-	print("envirment variable:",os.environ['DESIGN_NAME'])
+	#not working cause of env variable!
+	if len(sys.argv) > 1:	
+		DS_out_path=root+"/myDataSet"
+		if not os.path.exists(DS_out_path):
+			os.makedirs(DS_out_path)
+		df_cells.to_csv(DS_out_path+"/"+tech+"_"+design+"_cells.csv",index=False)
+		shutil.copy(projects+"/DGLedges.csv",DS_out_path+"/"+tech+"_"+design+"_edges.csv")
+#		shutil.rmtree(projects)
+	else:
+		df_cells.to_csv(projects+"/DGLcells_labeled.csv",index=False)
+		
+		
 
+	finish_time_project = int(datetime.now().timestamp())
+	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	print(">>>time for design",projects,":",(finish_time_project-start_time_project),flush=True)
+	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	time_log.write(">>>time for design "+projects+":"+str(finish_time_project-start_time_project))
+	projects_times[projects]=finish_time_project-start_time_project
+
+for proj,time_proj in projects_times.items():
+	time_log.write(str(proj)+","+str(time_proj))
+time_log.write("Time for everything:",start_all-(int(datetime.now().timestamp())))
