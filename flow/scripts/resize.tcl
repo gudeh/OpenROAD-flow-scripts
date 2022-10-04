@@ -1,25 +1,6 @@
-if {![info exists standalone] || $standalone} {
-  # Read lef
-  read_lef $::env(TECH_LEF)
-  read_lef $::env(SC_LEF)
-  if {[info exist ::env(ADDITIONAL_LEFS)]} {
-    foreach lef $::env(ADDITIONAL_LEFS) {
-      read_lef $lef
-    }
-  }
-  
-  # Read liberty files
-  source $::env(SCRIPTS_DIR)/read_liberty.tcl
-
-  # Read def and sdc
-  read_def $::env(RESULTS_DIR)/3_2_place_iop.def
-  read_sdc $::env(RESULTS_DIR)/2_floorplan.sdc
-  if [file exists $::env(PLATFORM_DIR)/derate.tcl] {
-    source $::env(PLATFORM_DIR)/derate.tcl
-  }
-} else {
-  puts "Starting resizer"
-}
+utl::set_metrics_stage "placeopt__{}"
+source $::env(SCRIPTS_DIR)/load.tcl
+load_design 3_3_place_gp.odb 2_floorplan.sdc "Starting resizer"
 
 proc print_banner {header} {
   puts "\n=========================================================================="
@@ -27,13 +8,13 @@ proc print_banner {header} {
   puts "--------------------------------------------------------------------------"
 }
 
-# Set res and cap
-source $::env(PLATFORM_DIR)/setRC.tcl
-
 estimate_parasitics -placement
 
+
+utl::push_metrics_stage "placeopt__{}__pre_opt"
 source $::env(SCRIPTS_DIR)/report_metrics.tcl
-report_metrics "resizer pre" false
+report_metrics "resizer pre" false false
+utl::pop_metrics_stage
 
 print_banner "instance_count"
 puts [sta::network_leaf_instance_count]
@@ -82,7 +63,7 @@ print_banner "report_floating_nets"
 report_floating_nets
 
 source $::env(SCRIPTS_DIR)/report_metrics.tcl
-report_metrics "resizer"
+report_metrics "resizer" true false
 
 print_banner "instance_count"
 puts [sta::network_leaf_instance_count]
@@ -93,5 +74,5 @@ puts [sta::network_leaf_pin_count]
 puts ""
 
 if {![info exists save_checkpoint] || $save_checkpoint} {
-  write_def $::env(RESULTS_DIR)/3_3_place_resized.def
+  write_db $::env(RESULTS_DIR)/3_4_place_resized.odb
 }

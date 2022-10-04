@@ -1,32 +1,5 @@
-if {![info exists standalone] || $standalone} {
-  # Read lef
-  read_lef $::env(TECH_LEF)
-  read_lef $::env(SC_LEF)
-  if {[info exist ::env(ADDITIONAL_LEFS)]} {
-    foreach lef $::env(ADDITIONAL_LEFS) {
-      read_lef $lef
-    }
-  }
-
-  # Read liberty files
-  source $::env(SCRIPTS_DIR)/read_liberty.tcl
-
-  # Read design files
-  if {[info exists ::env(RTLMP_FLOW)]} {
-    puts "RTLMP flow.. read verilog and floorplan def"
-    read_verilog $::env(RESULTS_DIR)/1_synth.v
-    link_design $::env(DESIGN_NAME)
-    read_def $::env(FLOORPLAN_DEF) -floorplan_initialize
-  } else {
-    read_def $::env(RESULTS_DIR)/2_3_floorplan_tdms.def
-  }
-  read_sdc $::env(RESULTS_DIR)/1_synth.sdc
-  if [file exists $::env(PLATFORM_DIR)/derate.tcl] {
-    source $::env(PLATFORM_DIR)/derate.tcl
-  }
-} else {
-  puts "Starting macro placement"
-}
+source $::env(SCRIPTS_DIR)/load.tcl
+load_design 2_3_floorplan_tdms.odb 1_synth.sdc "Starting macro placement"
 
 proc find_macros {} {
   set macros ""
@@ -115,6 +88,9 @@ if {[find_macros] != ""} {
     if { [info exists ::env(RTLMP_NOTCH_WT)]} {
         append additional_rtlmp_args " -notch_weight $env(RTLMP_NOTCH_WT)"
     }
+    if { [info exists ::env(RTLMP_DEAD_SPACE)]} {
+        append additional_rtlmp_args " -dead_space $env(RTLMP_DEAD_SPACE)"
+    }
     if { [info exists ::env(RTLMP_CONFIG_FILE)]} {
         append additional_rtlmp_args " -config_file $env(RTLMP_CONFIG_FILE)"
     }
@@ -125,13 +101,24 @@ if {[find_macros] != ""} {
         append additional_rtlmp_args " -macro_blockage_file $env(RTLMP_BLOCKAGE_FILE)"
     }
 
-    partition_design -net_threshold 5 \
+    if { [info exists ::env(RTLMP_KEEPIN)]} {
+        partition_design -net_threshold 5 \
+                     -virtual_weight 1 \
+                     -num_hop 3 \
+                     -timing_weight 1 \
+                     -report_directory $env(RTLMP_RPT_DIR) \
+                     -report_file $env(RTLMP_RPT_FILE) \
+                     -keepin $env(RTLMP_KEEPIN) \
+                     {*}$additional_partition_args
+    } else {
+        partition_design -net_threshold 5 \
                      -virtual_weight 1 \
                      -num_hop 3 \
                      -timing_weight 1 \
                      -report_directory $env(RTLMP_RPT_DIR) \
                      -report_file $env(RTLMP_RPT_FILE) \
                      {*}$additional_partition_args
+    }
 
     rtl_macro_placer -report_directory $env(RTLMP_RPT_DIR) \
                      {*}$additional_rtlmp_args
@@ -157,5 +144,5 @@ if {[find_macros] != ""} {
 }
 
 if {![info exists save_checkpoint] || $save_checkpoint} {
-  write_def $::env(RESULTS_DIR)/2_4_floorplan_macro.def
+  write_db $::env(RESULTS_DIR)/2_4_floorplan_macro.odb
 }

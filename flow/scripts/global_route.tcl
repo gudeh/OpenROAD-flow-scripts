@@ -1,27 +1,6 @@
-if {![info exists standalone] || $standalone} {
-  # Read lef
-  read_lef $env(TECH_LEF)
-  read_lef $env(SC_LEF)
-  if {[info exist env(ADDITIONAL_LEFS)]} {
-    foreach lef $env(ADDITIONAL_LEFS) {
-      read_lef $lef
-    }
-  }
-
-  # Read liberty files
-  source $::env(SCRIPTS_DIR)/read_liberty.tcl
-
-  # Read design files
-  # Read SDC and derating files
-  read_def $env(RESULTS_DIR)/4_cts.def
-  read_sdc $env(RESULTS_DIR)/2_floorplan.sdc
-  if [file exists $env(PLATFORM_DIR)/derate_final.tcl] {
-    source $env(PLATFORM_DIR)/derate_final.tcl
-    puts "derate_final.tcl sourced"
-  }
-} else {
-  puts "Starting global routing"
-}
+utl::set_metrics_stage "globalroute__{}"
+source $::env(SCRIPTS_DIR)/load.tcl
+load_design 4_cts.odb 4_cts.sdc "Starting global routing"
 
 if {[info exist env(PRE_GLOBAL_ROUTE)]} {
   source $env(PRE_GLOBAL_ROUTE)
@@ -39,11 +18,6 @@ global_route -guide_file $env(RESULTS_DIR)/route.guide \
                -congestion_iterations 100 \
                -verbose
 
-# Set res and cap
-if [file exists $env(PLATFORM_DIR)/setRC.tcl] {
-  source $env(PLATFORM_DIR)/setRC.tcl
-}
-
 set_propagated_clock [all_clocks]
 estimate_parasitics -global_routing
 
@@ -58,3 +32,6 @@ check_antennas -report_file $env(REPORTS_DIR)/antenna.log -report_violating_nets
 # Write SDC to results with updated clock periods that are just failing.
 # Use make target update_sdc_clock to install the updated sdc.
 source [file join $env(SCRIPTS_DIR) "write_ref_sdc.tcl"]
+if {![info exists save_checkpoint] || $save_checkpoint} {
+  write_db $env(RESULTS_DIR)/5_1_grt.odb
+}

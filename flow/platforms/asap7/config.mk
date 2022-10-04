@@ -15,7 +15,7 @@ export BC_LIB_FILES            = $(PLATFORM_DIR)/lib/asap7sc7p5t_AO_RVT_FF_nldm_
 				 $(PLATFORM_DIR)/lib/asap7sc7p5t_OA_RVT_FF_nldm_201020.lib \
 				 $(PLATFORM_DIR)/lib/asap7sc7p5t_SIMPLE_RVT_FF_nldm_201020.lib \
 				 $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_RVT_FF_nldm_201020.lib \
-         			 $(ADDITIONAL_LIBS)
+				 $(ADDITIONAL_LIBS)
 
 export BC_DFF_LIB_FILE        = $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_RVT_FF_nldm_201020.lib
 
@@ -24,26 +24,30 @@ export WC_LIB_FILES           = $(PLATFORM_DIR)/lib/asap7sc7p5t_AO_RVT_SS_nldm_2
 				$(PLATFORM_DIR)/lib/asap7sc7p5t_OA_RVT_SS_nldm_201020.lib \
 				$(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_RVT_SS_nldm_201020.lib \
 				$(PLATFORM_DIR)/lib/asap7sc7p5t_SIMPLE_RVT_SS_nldm_201020.lib \
-       				$(ADDITIONAL_LIBS)
+				$(ADDITIONAL_LIBS)
 
-export WC_DFF_LIB_FILE        = $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_RVT_SS_nldm_201020.lib \
+export WC_DFF_LIB_FILE        = $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_RVT_SS_nldm_201020.lib
 
 export TC_LIB_FILES           = $(PLATFORM_DIR)/lib/asap7sc7p5t_AO_RVT_TT_nldm_201020.lib \
 				$(PLATFORM_DIR)/lib/asap7sc7p5t_INVBUF_RVT_TT_nldm_201020.lib \
 				$(PLATFORM_DIR)/lib/asap7sc7p5t_OA_RVT_TT_nldm_201020.lib \
 				$(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_RVT_TT_nldm_201020.lib \
 				$(PLATFORM_DIR)/lib/asap7sc7p5t_SIMPLE_RVT_TT_nldm_201020.lib \
-        			$(ADDITIONAL_LIBS)
+				$(ADDITIONAL_LIBS)
 
-export TC_DFF_LIB_FILE        = $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_RVT_TT_nldm_201020.lib \
+export TC_DFF_LIB_FILE        = $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_RVT_TT_nldm_201020.lib
 
 export BC_TEMPERATURE          = 25C
 export TC_TEMPERATURE          = 0C
 export WC_TEMPERATURE          = 100C
 
+export BC_VOLTAGE          = 0.77
+export TC_VOLTAGE          = 0.70
+export WC_VOLTAGE          = 0.63
+
 # Dont use cells to ease congestion
 # Specify at least one filler cell if none
-export DONT_USE_CELLS          = *x1_ASAP7* *x1p*_ASAP7* *xp*_ASAP7*
+export DONT_USE_CELLS          = *x1p*_ASAP7* *xp*_ASAP7*
 export DONT_USE_CELLS          += SDF* ICG* DFFH*
 
 # Yosys mapping files
@@ -76,7 +80,7 @@ export PLACE_SITE              = asap7sc7p5t
 export MAKE_TRACKS             = $(PLATFORM_DIR)/openRoad/make_tracks.tcl
 
 # Define default PDN config
-export PDN_CFG ?= $(PLATFORM_DIR)/openRoad/pdn/grid_strategy-M2-M5-M7.cfg
+export PDN_TCL ?= $(PLATFORM_DIR)/openRoad/pdn/grid_strategy-M2-M5-M7.tcl
 
 # IO Placer pin layers
 export IO_PLACER_H             = M4
@@ -91,14 +95,11 @@ export CELL_PAD_IN_SITES_DETAIL_PLACEMENT ?= 1
 
 export PLACE_DENSITY ?= 0.60
 
-# Layer to use for parasitics estimations
-export WIRE_RC_LAYER           = M3
-
 # Endcap and Welltie cells
 export TAPCELL_TCL             = $(PLATFORM_DIR)/openRoad/tapcell.tcl
 
 # TritonCTS options
-export CTS_BUF_CELL            = BUFx4_ASAP7_75t_R
+export CTS_BUF_CELL            ?= BUFx4_ASAP7_75t_R
 
 export CTS_BUF_DISTANCE        = 60
 
@@ -131,29 +132,29 @@ endif
 ifdef ($(ASAP7_USELVT))
    export TIEHI_CELL_AND_PORT     = TIEHIx1_ASAP7_75t_L H
    export TIELO_CELL_AND_PORT     = TIELOx1_ASAP7_75t_L L
-   
+
    export MIN_BUF_CELL_AND_PORTS  = BUFx2_ASAP7_75t_L A Y
-   
+
    export HOLD_BUF_CELL           = BUFx2_ASAP7_75t_L
-   
+
    export BC_LIB_FILES           = $(PLATFORM_DIR)/lib/asap7sc7p5t_AO_LVT_FF_nldm_201020.lib \
-   			           $(PLATFORM_DIR)/lib/asap7sc7p5t_INVBUF_LVT_FF_nldm_201020.lib \
-   			           $(PLATFORM_DIR)/lib/asap7sc7p5t_OA_LVT_FF_nldm_201020.lib \
-   			           $(PLATFORM_DIR)/lib/asap7sc7p5t_SIMPLE_LVT_FF_nldm_201020.lib \
-   			           $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_LVT_FF_nldm_201020.lib
-   
+			           $(PLATFORM_DIR)/lib/asap7sc7p5t_INVBUF_LVT_FF_nldm_201020.lib \
+			           $(PLATFORM_DIR)/lib/asap7sc7p5t_OA_LVT_FF_nldm_201020.lib \
+			           $(PLATFORM_DIR)/lib/asap7sc7p5t_SIMPLE_LVT_FF_nldm_201020.lib \
+			           $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_LVT_FF_nldm_201020.lib
+
    export WC_LIB_FILES           = $(PLATFORM_DIR)/lib/asap7sc7p5t_AO_LVT_SS_nldm_201020.lib \
-   				   $(PLATFORM_DIR)/lib/asap7sc7p5t_INVBUF_LVT_SS_nldm_201020.lib \
-   				   $(PLATFORM_DIR)/lib/asap7sc7p5t_OA_LVT_SS_nldm_201020.lib \
-   				   $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_LVT_SS_nldm_201020.lib \
-   				   $(PLATFORM_DIR)/lib/asap7sc7p5t_SIMPLE_LVT_SS_nldm_201020.lib
-   
+				   $(PLATFORM_DIR)/lib/asap7sc7p5t_INVBUF_LVT_SS_nldm_201020.lib \
+				   $(PLATFORM_DIR)/lib/asap7sc7p5t_OA_LVT_SS_nldm_201020.lib \
+				   $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_LVT_SS_nldm_201020.lib \
+				   $(PLATFORM_DIR)/lib/asap7sc7p5t_SIMPLE_LVT_SS_nldm_201020.lib
+
    export TC_LIB_FILES           = $(PLATFORM_DIR)/lib/asap7sc7p5t_AO_LVT_TT_nldm_201020.lib \
-   				   $(PLATFORM_DIR)/lib/asap7sc7p5t_INVBUF_LVT_TT_nldm_201020.lib \
-   				   $(PLATFORM_DIR)/lib/asap7sc7p5t_OA_LVT_TT_nldm_201020.lib \
-   				   $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_LVT_TT_nldm_201020.lib \
-   				   $(PLATFORM_DIR)/lib/asap7sc7p5t_SIMPLE_LVT_TT_nldm_201020.lib
-   
+				   $(PLATFORM_DIR)/lib/asap7sc7p5t_INVBUF_LVT_TT_nldm_201020.lib \
+				   $(PLATFORM_DIR)/lib/asap7sc7p5t_OA_LVT_TT_nldm_201020.lib \
+				   $(PLATFORM_DIR)/lib/asap7sc7p5t_SEQ_LVT_TT_nldm_201020.lib \
+				   $(PLATFORM_DIR)/lib/asap7sc7p5t_SIMPLE_LVT_TT_nldm_201020.lib
+
 endif
 
 #Dont use SC library based on CORNER selection
@@ -163,11 +164,22 @@ ifeq ($(CORNER),)
    export LIB_FILES             += $($(CORNER)_LIB_FILES)
    export LIB_DIRS              += $($(CORNER)_LIB_DIRS)
    export TEMPERATURE            = $($(CORNER)_TEMPERATURE)
+   export VOLTAGE                = $($(CORNER)_VOLTAGE)
    export DONT_USE_SC_LIB        = $(OBJECTS_DIR)/lib/merged.lib
 else
    $(info User PVT selection: $(CORNER))
    export LIB_FILES             += $($(CORNER)_LIB_FILES)
    export LIB_DIRS              += $($(CORNER)_LIB_DIRS)
    export TEMPERATURE            = $($(CORNER)_TEMPERATURE)
+   export VOLTAGE                = $($(CORNER)_VOLTAGE)
    export DONT_USE_SC_LIB        = $(OBJECTS_DIR)/lib/merged.lib
 endif
+# ---------------------------------------------------------
+#  IR Drop
+# ---------------------------------------------------------
+
+# IR drop estimation supply net name to be analyzed and supply voltage variable
+# For multiple nets: PWR_NETS_VOLTAGES  = "VDD1 1.8 VDD2 1.2"
+export PWR_NETS_VOLTAGES  ?= "VDD $(VOLTAGE)"
+export GND_NETS_VOLTAGES  ?= "VSS 0.0"
+export IR_DROP_LAYER ?= M1

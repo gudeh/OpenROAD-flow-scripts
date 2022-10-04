@@ -1,28 +1,16 @@
-if {![info exists standalone] || $standalone} {
-  # Read lef
-  read_lef $::env(TECH_LEF)
-  read_lef $::env(SC_LEF)
-  if {[info exist ::env(ADDITIONAL_LEFS)]} {
-    foreach lef $::env(ADDITIONAL_LEFS) {
-      read_lef $lef
-    }
-  }
-
-  # Read liberty files
-  source $::env(SCRIPTS_DIR)/read_liberty.tcl
-
-  # Read design files
-  read_def $::env(RESULTS_DIR)/4_cts.def
+utl::set_metrics_stage "detailedroute__{}"
+source $::env(SCRIPTS_DIR)/load.tcl
+if { [info exists ::env(USE_WXL)]} {
+  set db_file 4_cts.odb
 } else {
-  puts "Starting detailed routing"
+  set db_file 5_1_grt.odb
 }
+load_design $db_file 4_cts.sdc "Starting detailed routing"
+set_propagated_clock [all_clocks]
 
 set_thread_count $::env(NUM_CORES)
 
 set additional_args ""
-if { ![info exists ::env(USE_WXL)]} {
-  append additional_args " -guide $::env(RESULTS_DIR)/route.guide"
-}
 if { [info exists ::env(dbProcessNode)]} {
   append additional_args " -db_process_node $::env(dbProcessNode)"
 }
@@ -51,8 +39,8 @@ if { [info exists ::env(DISABLE_VIA_GEN)]} {
 
 
 detailed_route -output_drc $::env(REPORTS_DIR)/5_route_drc.rpt \
-               -output_guide $::env(RESULTS_DIR)/output_guide.mod \
                -output_maze $::env(RESULTS_DIR)/maze.log \
+               -save_guide_updates \
                -verbose 1 \
                {*}$additional_args
 
@@ -61,5 +49,5 @@ if { [info exists ::env(POST_DETAIL_ROUTE_TCL)] } {
 }
 
 if {![info exists save_checkpoint] || $save_checkpoint} {
-  write_def $::env(RESULTS_DIR)/5_route.def
+  write_db $::env(RESULTS_DIR)/5_2_route.odb
 }

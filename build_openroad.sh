@@ -9,7 +9,17 @@ cd "$(dirname $(readlink -f $0))"
 
 # Defaults variable values
 NICE=""
-PROC=$(nproc --all)
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  PROC=$(nproc --all)
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  PROC=$(sysctl -n hw.ncpu)
+else
+  cat << EOF
+[WARNING FLW-0025] Unsupported OSTYPE: cannot determine number of host CPUs"
+  Defaulting to 2 threads. Use --threads N to use N threads"
+EOF
+  PROC=2
+fi
 DOCKER_TAG="openroad/flow-scripts"
 OPENROAD_APP_REMOTE="origin"
 OPENROAD_APP_BRANCH="master"
@@ -79,6 +89,9 @@ Options:
 
     --openroad-args STRING  Aditional compilation flags for OpenROAD app
                             compilation.
+
+    --lsoracle-enable       Compile LSOracle. Disable by default as it is not
+                            currently used on the flow.
 
     --lsoracle-args-overwrite
                             Do not use default flags set by this scrip during
@@ -165,6 +178,9 @@ while (( "$#" )); do
                 --openroad-args)
                         OPENROAD_APP_USER_ARGS="$2"
                         shift
+                        ;;
+                --lsoracle-enable)
+                        LSORACLE_ENABLE=1
                         ;;
                 --lsoracle-args-overwrite)
                         LSORACLE_OVERWIRTE_ARGS=1
@@ -271,6 +287,9 @@ __docker_build()
 
 __local_build()
 {
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$(brew --prefix tcl-tk)/bin:$PATH"
+        fi
         echo "[INFO FLW-0017] Compiling Yosys."
         ${NICE} make install -C tools/yosys -j "${PROC}" ${YOSYS_ARGS}
 
@@ -278,9 +297,11 @@ __local_build()
         ${NICE} cmake tools/OpenROAD -B tools/OpenROAD/build ${OPENROAD_APP_ARGS}
         ${NICE} cmake --build tools/OpenROAD/build --target install -j "${PROC}"
 
-        echo "[INFO FLW-0019] Compiling LSOracle."
-        ${NICE} cmake tools/LSOracle -B tools/LSOracle/build ${LSORACLE_ARGS}
-        ${NICE} cmake --build tools/LSOracle/build --target install -j "${PROC}"
+        if [ ! -z "${LSORACLE_ENABLE+x}" ]; then
+                echo "[INFO FLW-0019] Compiling LSOracle."
+                ${NICE} cmake tools/LSOracle -B tools/LSOracle/build ${LSORACLE_ARGS}
+                ${NICE} cmake --build tools/LSOracle/build --target install -j "${PROC}"
+        fi
 }
 
 __update_openroad_app_remote()
@@ -357,6 +378,6 @@ if [ -z "${LOCAL_BUILD+x}" ] && command -v docker &> /dev/null; then
         __docker_build
 else
         echo -n "[INFO FLW-0001] Using local build method."
-        echo " This will create binaries at 'tools/install unless overwritten."
+        echo " This will create binaries at 'tools/install' unless overwritten."
         __local_build
 fi

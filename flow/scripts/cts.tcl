@@ -1,33 +1,10 @@
-if {![info exists standalone] || $standalone} {
-  # Read lef
-  read_lef $::env(TECH_LEF)
-  read_lef $::env(SC_LEF)
-  if {[info exist ::env(ADDITIONAL_LEFS)]} {
-    foreach lef $::env(ADDITIONAL_LEFS) {
-      read_lef $lef
-    }
-  }
-
-  # Read liberty files
-  source $::env(SCRIPTS_DIR)/read_liberty.tcl
-
-  # Read design files
-  read_def $::env(RESULTS_DIR)/3_place.def
-
-  # Read SDC file
-  read_sdc $::env(RESULTS_DIR)/3_place.sdc
-  if [file exists $::env(PLATFORM_DIR)/derate.tcl] {
-    source $::env(PLATFORM_DIR)/derate.tcl
-  }
-} else {
-  puts "Starting CTS"
-}
+utl::set_metrics_stage "cts__{}"
+source $::env(SCRIPTS_DIR)/load.tcl
+load_design 3_place.odb 3_place.sdc "Starting CTS"
 
 # Clone clock tree inverters next to register loads
 # so cts does not try to buffer the inverted clocks.
 repair_clock_inverters
-
-source $::env(PLATFORM_DIR)/setRC.tcl
 
 # Run CTS
 if {[info exist ::env(CTS_CLUSTER_SIZE)]} {
@@ -60,15 +37,19 @@ set_propagated_clock [all_clocks]
 
 set_dont_use $::env(DONT_USE_CELLS)
 
+utl::push_metrics_stage "cts__{}__pre_repair"
 source $::env(SCRIPTS_DIR)/report_metrics.tcl
 
 estimate_parasitics -placement
 report_metrics "cts pre-repair"
+utl::pop_metrics_stage
 
 repair_clock_nets
 
+utl::push_metrics_stage "cts__{}__post_repair"
 estimate_parasitics -placement
 report_metrics "cts post-repair"
+utl::pop_metrics_stage
 
 set_placement_padding -global \
     -left $::env(CELL_PAD_IN_SITES_DETAIL_PLACEMENT) \
@@ -77,23 +58,20 @@ detailed_placement
 
 estimate_parasitics -placement
 
-puts "Repair setup violations..."
+puts "Repair setup and hold violations..."
+
 # process user settings
 set additional_args ""
 if { [info exists ::env(SETUP_SLACK_MARGIN)] && $::env(SETUP_SLACK_MARGIN) > 0.0} {
-  puts "Setup repair with slack margin $::env(SETUP_SLACK_MARGIN)"
-  append additional_args " -slack_margin $::env(SETUP_SLACK_MARGIN)"
+  puts "Setup slack margin $::env(SETUP_SLACK_MARGIN)"
+  append additional_args " -setup_margin $::env(SETUP_SLACK_MARGIN)"
 }
-eval repair_timing -setup $additional_args
-
-puts "Repair hold violations..."
-# process user settings
-set additional_args ""
 if { [info exists ::env(HOLD_SLACK_MARGIN)] && $::env(HOLD_SLACK_MARGIN) > 0.0} {
-  puts "Hold repair with slack margin $::env(HOLD_SLACK_MARGIN)"
-  append additional_args " -slack_margin $::env(HOLD_SLACK_MARGIN)"
+  puts "Hold slack margin $::env(HOLD_SLACK_MARGIN)"
+  append additional_args " -hold_margin $::env(HOLD_SLACK_MARGIN)"
 }
-repair_timing -hold {*}$additional_args
+
+repair_timing {*}$additional_args
 
 detailed_placement
 check_placement -verbose
@@ -105,7 +83,9 @@ if { [info exists ::env(POST_CTS_TCL)] } {
 }
 
 if {![info exists save_checkpoint] || $save_checkpoint} {
-  write_def $::env(RESULTS_DIR)/4_1_cts.def
-  write_verilog $::env(RESULTS_DIR)/4_cts.v
+  if {[info exists ::env(GALLERY_REPORT)]  && $::env(GALLERY_REPORT) != 0} {
+      write_def $::env(RESULTS_DIR)/4_1_cts.def
+  }
+  write_db $::env(RESULTS_DIR)/4_1_cts.odb
   write_sdc $::env(RESULTS_DIR)/4_cts.sdc
 }
