@@ -74,8 +74,9 @@ core.*
 <<<<<<< HEAD
 #my things
 flow/myStuff/*
+!flow/myStuff/regression.py
 !flow/myStuff/designsToRun.txt
-!flow/myStuff/gateToHeat.py
+!flow/myStuff/gateToHeat.cpp
 =======
 # Python bytecode
 __pycache__/
