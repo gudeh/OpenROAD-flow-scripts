@@ -8,7 +8,7 @@
 # DESIGN_CONFIG=./designs/nangate45/bp_fe_top/config.mk
 # DESIGN_CONFIG=./designs/nangate45/bp_multi_top/config.mk
 # DESIGN_CONFIG=./designs/nangate45/dynamic_node/config.mk
- DESIGN_CONFIG=./designs/nangate45/gcd/config.mk
+# DESIGN_CONFIG=./designs/nangate45/gcd/config.mk
 # DESIGN_CONFIG=./designs/nangate45/ibex/config.mk
 # DESIGN_CONFIG=./designs/nangate45/jpeg/config.mk
 # DESIGN_CONFIG=./designs/nangate45/swerv/config.mk
@@ -77,7 +77,7 @@
 # DESIGN_CONFIG=./designs/intel22/aes/config.mk
 #
 # Default design
-#DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
+DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
 
 # If we are running headless use offscreen rendering for save_image
 ifndef DISPLAY
@@ -99,13 +99,13 @@ endif
 
 #-------------------------------------------------------------------------------
 # Proper way to initiate SHELL for make
-<<<<<<< HEAD
-SHELL          = /bin/bash
-.SHELLFLAGS    = -o pipefail -c
-=======
+#<<<<<<< HEAD
+#SHELL          = /bin/bash
+#.SHELLFLAGS    = -o pipefail -c
+#=======
 SHELL          := /usr/bin/env bash
 .SHELLFLAGS    := -o pipefail -c
->>>>>>> upstream/master
+#>>>>>>> upstream/master
 
 #-------------------------------------------------------------------------------
 # Setup variables to point to root / head of the OpenROAD directory
@@ -762,11 +762,11 @@ RESULTS_OAS = $(notdir $(sort $(wildcard $(RESULTS_DIR)/*.oas)))
 $(foreach file,$(RESULTS_DEF) $(RESULTS_GDS) $(RESULTS_OAS),klayout_$(file)): klayout_%: $(OBJECTS_DIR)/klayout.lyt
 	$(KLAYOUT_CMD) -nn $(OBJECTS_DIR)/klayout.lyt $(RESULTS_DIR)/$*
 
-<<<<<<< HEAD
-gui_final: gui_6_final.def
-$(foreach file,$(RESULTS_DEF),gui_$(file)): gui_%:
-	DEF_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/gui.tcl
-=======
+#<<<<<<< HEAD
+#gui_final: gui_6_final.def
+#$(foreach file,$(RESULTS_DEF),gui_$(file)): gui_%:
+#	DEF_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/gui.tcl
+#=======
 gui_floorplan: gui_2_floorplan.odb
 gui_place: gui_3_place.odb
 gui_cts: gui_4_cts.odb
@@ -785,13 +785,28 @@ $(foreach file,$(RESULTS_ODB),$(file).def): %.def:
 
 all_defs : $(foreach file,$(RESULTS_ODB),$(file).def)
 
->>>>>>> upstream/master
+#>>>>>>> upstream/master
 print-%  : ; @echo $* = $($*)
 
-my_gui: my_gui_6_final.def
+
+gui_floorplan: gui_2_floorplan.odb
+gui_place: gui_3_place.odb
+gui_cts: gui_4_cts.odb
+gui_route: gui_5_route.odb
+#gui_final: gui_6_final.odb
+my_gui: my_gui_6_final.odb
+
 $(foreach file,$(RESULTS_DEF),my_gui_$(file)): my_gui_%:
 	DEF_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
-#print-%  : ; @echo $* = $($*)
+	
+$(foreach file,$(RESULTS_ODB),my_gui_$(file)): my_gui_%:
+	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
+	
+#	 Write a def for the corresponding odb
+#$(foreach file,$(RESULTS_ODB),$(file).def): %.def:
+#	ODB_FILE=$(RESULTS_DIR)/$* DEF_FILE=$(RESULTS_DIR)/$@ $(OPENROAD_CMD) $(SCRIPTS_DIR)/write_def.tcl
+	
+print-%  : ; @echo $* = $($*)
 
 # Utilities
 #-------------------------------------------------------------------------------
