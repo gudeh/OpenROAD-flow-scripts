@@ -5,6 +5,7 @@ import os
 import pandas as pd
 import torch.nn as nn
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 print("dgl.__version_",dgl.__version__)
 
@@ -68,9 +69,9 @@ class SAGE(nn.Module):
     def __init__(self, in_feats, hid_feats, out_feats):
         super().__init__()
         self.conv1 = dglnn.SAGEConv(
-            in_feats=in_feats, out_feats=hid_feats, aggregator_type='mean')
+            in_feats=in_feats, out_feats=hid_feats, aggregator_type='lstm')
         self.conv2 = dglnn.SAGEConv(
-            in_feats=hid_feats, out_feats=out_feats, aggregator_type='mean')
+            in_feats=hid_feats, out_feats=out_feats, aggregator_type='lstm')
 
     def forward(self, graph, inputs):
         # inputs are features of nodes
@@ -80,15 +81,24 @@ class SAGE(nn.Module):
         return h
 
 
-def evaluate(model, graph, features, labels, mask):
-    model.eval()
-    with torch.no_grad():
-        logits = model(graph, features)
-        logits = logits[mask]
-        labels = labels[mask]
-        _, indices = torch.max(logits, dim=1)
-        correct = torch.sum(indices == labels)
-        return correct.item() * 1.0 / len(labels)
+def evaluate(model, graph, features, labels, valid_mask, train_mask):
+	model.eval()
+	with torch.no_grad():
+		logits = model(graph, features)
+		logits = logits[valid_mask]
+		labelsAux = labels[valid_mask]
+		_, indices = torch.max(logits, dim=1)
+		correct = torch.sum(indices == labelsAux)
+		validAcc = correct.item() * 1.0 / len(labelsAux)
+		
+		logits = model(graph, features)
+		logits = logits[train_mask]
+		labels = labels[train_mask]
+		_, indices = torch.max(logits, dim=1)
+		correct = torch.sum(indices == labels)
+		trainAcc = correct.item() * 1.0 / len(labels)
+		
+		return trainAcc, validAcc
 
 
 def regressionTrain(graph):
@@ -107,19 +117,45 @@ def regressionTrain(graph):
 
 	model = SAGE(in_feats=n_features, hid_feats=100, out_feats=n_labels)
 	opt = torch.optim.Adam(model.parameters(), lr=0.03)
-	for epoch in range(15000):
+	loss_hist = []
+	trainAccHist = []
+	validAccHist = []
+	epochs = 5000
+	for epoch in range( epochs ):
 		model.train()
 		# forward propagation by using all nodes
 		logits = model(graph, node_features)
 		# compute loss
 		loss = F.cross_entropy(logits[train_mask], node_labels[train_mask])
+		loss_hist.append( loss.item() )
 		# compute validation accuracy
-		acc = evaluate(model, graph, node_features, node_labels, valid_mask)
+		trainAcc, validAcc  = evaluate(model, graph, node_features, node_labels, valid_mask, train_mask)
+		trainAccHist.append( trainAcc )
+		validAccHist.append( validAcc )
 		# backward propagation
 		opt.zero_grad()
 		loss.backward()
 		opt.step()
-		print( "loss", loss.item(), "acc", acc )
+	
+	print( "loss", loss.item(), "trainAcc", trainAcc, "validAcc", validAcc )
+	
+	fig, ax1 = plt.subplots()
+	ax2 = ax1.twinx()
+	epochs_list = [i for i in range(epochs)]
+	ax1.plot(epochs_list, trainAccHist, label='Training accuracy')
+	ax1.plot(epochs_list, validAccHist, label='Validation accuracy')
+	ax1.set_ylabel('Accuracy')
+	ax1.set_xlabel('epochs')
+	ax1.legend()
+
+	ax2.plot(epochs_list, loss_hist, label='Training loss', color = 'g')
+#	ax2.plot(epochs_list, val_loss, label='Validation loss')
+	ax2.set_ylabel('Loss')
+	ax2.set_xlabel('epochs')
+	ax2.legend()
+	plt.draw()
+	plt.show()
+	#ax2.savefig(V5_Full_Loss.png)
 
 
 
