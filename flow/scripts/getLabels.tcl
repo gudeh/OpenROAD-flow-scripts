@@ -101,6 +101,6 @@ gui::dump_heatmap IRDrop $myname
 unset sdc_file s design_stage
 
 puts "\nExit getLabels.tcl"
-exit
+#exit
 
 }

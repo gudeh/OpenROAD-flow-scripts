@@ -85,10 +85,10 @@ cout << endl;
     }
     cout << endl;
 
-    cout << "within_nodes: " << endl;
-    std::vector<rtree_node_type> within_nodes;
-    rtree.query(boost::geometry::index::within(box_search), std::back_inserter(within_nodes));
-    for (auto node : within_nodes) {
+    cout << "intersects_nodes: " << endl;
+    std::vector<rtree_node_type> intersects_nodes;
+    rtree.query(boost::geometry::index::intersects(box_search), std::back_inserter(intersects_nodes));
+    for (auto node : intersects_nodes) {
         cout << node.second << endl;
     }
     cout << endl;
@@ -109,9 +109,9 @@ cout << endl;
     }
     cout << endl;
 
-    cout << "intersect_with_area: (within + overlaps)" << endl;
+    cout << "intersect_with_area: (intersects + overlaps)" << endl;
     std::vector<rtree_node_type> int_area_nodes;
-    rtree.query(boost::geometry::index::within(box_search), std::back_inserter(int_area_nodes));
+    rtree.query(boost::geometry::index::intersects(box_search), std::back_inserter(int_area_nodes));
     rtree.query(boost::geometry::index::overlaps(box_search), std::back_inserter(int_area_nodes));
     for (auto node : int_area_nodes) {
         cout << node.second << endl;
@@ -234,10 +234,10 @@ int main(int argc, char** argv) {
         map< string, gate > gate_to_heat;
         
         //Reading file from logic synthesis (yosys)
-        fstream cellsFile( cellsPath, ios::in );
+        fstream dglCellsFile( cellsPath, ios::in );
         string myLine;
-        getline( cellsFile, myLine );
-        while  ( getline( cellsFile, myLine ) )
+        getline( dglCellsFile, myLine );
+        while  ( getline( dglCellsFile, myLine ) )
         {
             string word;
             stringstream s( myLine );
@@ -298,7 +298,7 @@ int main(int argc, char** argv) {
                 
                 auto box_search = box_type{ point_type{ stod(row[0]), stod(row[1])}, point_type{ stod(row[2]), stod(row[3]) } };
                 std::vector<rtree_node_type> int_area_nodes;
-                rtree.query( boost::geometry::index::within( box_search ), std::back_inserter( int_area_nodes ));
+                rtree.query( boost::geometry::index::intersects( box_search ), std::back_inserter( int_area_nodes ));
                 for ( auto& intersect : int_area_nodes )
                 {
 //                    gate_to_heat.insert( std::pair< std::string, double >( intersect.second, stod( row[4] ) ) );
