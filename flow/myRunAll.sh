@@ -10,5 +10,6 @@ printf ">>>>Done with OpenROAD runs!\n>>>>Handling all CSVs!\n"
 #printf "design config $DESIGN_CONFIG\n"
 #printf "platform $PLATFORM\n"
 #python3 myStuff/gateToHeat.py > myStuff/Python.out
-./gatetoheat > myStuff/gateToHeatCPP.out
+./gatetoheat > myStuff/gateToHeatCPP.log # warpping up data provided by yosys and openroad for python input
+python3 myStuff/regression.py > myStuff/regression.log # performing training 
 printf "myRunall.sh: finished!\n"

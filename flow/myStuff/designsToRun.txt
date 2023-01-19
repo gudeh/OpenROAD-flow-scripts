@@ -1,1 +1,1 @@
-./designs/nangate45/gcd/config.mk
+./designs/nangate45/c17/config.mk

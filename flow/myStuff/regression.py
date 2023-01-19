@@ -11,17 +11,17 @@ print("dgl.__version_",dgl.__version__)
 
 #root="aes_cipher_top/"
 root="myDataSet/"
-class fromYosysDS(DGLDataset):
+class DataSetFromYosys(DGLDataset):
 	def __init__(self):
 		super().__init__(name='mydata_from_yosys')
 
 	def process(self):
 		#nodes_data = pd.read_csv(root+'aes_DGLcells_labeled.csv')
-		nodes_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/gcd/gatesToHeat.csv')
+		nodes_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/c17/gatesToHeat.csv')
 #		node_labels = torch.from_numpy(nodes_data['ConnCount'].to_numpy())
 
 		#edges_data = pd.read_csv(root+'aes_DGLedges.csv')
-		edges_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/gcd/DGLedges.csv')
+		edges_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/c17/DGLedges.csv')
 		edges_src = torch.from_numpy(edges_data['Src'].to_numpy())
 		edges_dst = torch.from_numpy(edges_data['Dst'].to_numpy())
 		#edge_features = torch.from_numpy(edges_data['Weight'].to_numpy())
@@ -120,7 +120,7 @@ def regressionTrain(graph):
 	loss_hist = []
 	trainAccHist = []
 	validAccHist = []
-	epochs = 5000
+	epochs = 50
 	for epoch in range( epochs ):
 		model.train()
 		# forward propagation by using all nodes
@@ -159,7 +159,7 @@ def regressionTrain(graph):
 
 
 
-dataset = fromYosysDS()
+dataset = DataSetFromYosys()
 #print("dataset:",dataset)
 graph = dataset[0]
 #graph.ndata['type'] = torch.nn.functional.one_hot(graph.ndata['type'].to(torch.int64))
@@ -169,15 +169,15 @@ print("graph:",type(graph))
 print('We have %d nodes.' % graph.number_of_nodes())
 print('We have %d edges.' % graph.number_of_edges())
 
-#import networkx as nx
-#import matplotlib.pyplot as plt
-#nx_G = graph.to_networkx()
-#pos = nx.kamada_kawai_layout(nx_G)
-#nx.draw(nx_G, pos, with_labels=True, node_color=[[.7, .7, .7]])
-#plt.show()
+import networkx as nx
+import matplotlib.pyplot as plt
+nx_G = graph.to_networkx()
+pos = nx.kamada_kawai_layout(nx_G)
+nx.draw(nx_G, pos, with_labels=True, node_color=[[.7, .7, .7]])
+plt.show()
 
 print("len graph.ndata:",len(graph.ndata))
 print("type graph.ndata:",type(graph.ndata))
 
-regressionTrain(graph)
+#regressionTrain(graph)
 
