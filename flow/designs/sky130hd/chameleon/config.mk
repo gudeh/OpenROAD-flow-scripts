@@ -34,7 +34,7 @@ export CORE_AREA  = 20 20 2900 3500
 
 export chameleon_DIR = ./designs/$(PLATFORM)/$(DESIGN_NICKNAME)
 
-export ADDITIONAL_GDS_FILES  = $(chameleon_DIR)/gds/apb_sys_0.gds.gz \
+export ADDITIONAL_GDS  = $(chameleon_DIR)/gds/apb_sys_0.gds.gz \
                                $(chameleon_DIR)/gds/DMC_32x16HC.gds.gz \
                                $(chameleon_DIR)/gds/DFFRAM_4K.gds.gz \
                                $(chameleon_DIR)/gds/ibex_wrapper.gds.gz
@@ -45,7 +45,6 @@ export ADDITIONAL_LEFS  = $(chameleon_DIR)/lef/apb_sys_0.lef \
                           $(chameleon_DIR)/lef/ibex_wrapper.lef
 
 export MACRO_PLACEMENT = $(chameleon_DIR)/chameleon.macro_placment.cfg
-export MACRO_EXTENSION = 1
 
 export FP_PDN_RAIL_WIDTH = 0.48
 export FP_PDN_RAIL_OFFSET = 0

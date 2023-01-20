@@ -14,6 +14,13 @@ pipeline {
         sh "./build_openroad.sh --local";
         stash name: "install", includes: "tools/install/**";
       }
+      post {
+        always {
+          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            archiveArtifacts artifacts: "build_openroad.log";
+          }
+        }
+      }
     }
 
     stage('Tests') {
@@ -29,6 +36,8 @@ pipeline {
                   "jpeg asap7",
                   "sha3 asap7",
                   "uart asap7",
+                  "uart-blocks asap7",
+                  "mock-array-big asap7",
                   "aes nangate45",
                   "black_parrot nangate45",
                   "bp_be_top nangate45",

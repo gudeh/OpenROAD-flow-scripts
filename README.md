@@ -1,6 +1,7 @@
 # OpenROAD Flow
 
 [![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-flow-scripts-Public%2Fpublic_tests_all%2Fmaster)](https://jenkins.openroad.tools/view/Public/job/OpenROAD-flow-scripts-Public/job/public_tests_all/job/master/)
+[![Docs](https://readthedocs.org/projects/openroad-flow-scripts/badge/?version=latest)](https://openroad-flow-scripts.readthedocs.io/en/latest/?badge=latest)
 
 OpenROAD Flow is a full RTL-to-GDS flow built entirely on open-source tools.
 The project aims for automated, no-human-in-the-loop digital circuit design
@@ -9,9 +10,9 @@ with 24-hour turnaround time.
 ## Using the Flow
 
 - See the OpenROAD [documentation here](https://openroad.readthedocs.io/en/latest/).
-- How to [start using OpenROAD flow here](https://openroad.readthedocs.io/en/latest/user/GettingStarted.html).
-- Our [user guide here](https://openroad.readthedocs.io/en/latest/user/UserGuide.html).
-- Our [Flow Tutorial here](https://openroad.readthedocs.io/en/latest/tutorials/FlowTutorial.html).
+- How to [start using OpenROAD flow here](https://openroad-flow-scripts.readthedocs.io/en/latest/user/GettingStarted.html).
+- Our [user guide here](https://openroad-flow-scripts.readthedocs.io/en/latest/user/UserGuide.html).
+- Our [Flow Tutorial here](https://openroad-flow-scripts.readthedocs.io/en/latest/tutorials/FlowTutorial.html).
 
 ## Citing this Work
 

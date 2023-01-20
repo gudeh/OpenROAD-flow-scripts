@@ -10,7 +10,7 @@ export SC_LEF = $(PLATFORM_DIR)/lef/sky130_fd_sc_hd_merged.lef
 export LIB_FILES = $(PLATFORM_DIR)/lib/sky130_fd_sc_hd__tt_025C_1v80.lib \
                      $(ADDITIONAL_LIBS)
 export GDS_FILES = $(wildcard $(PLATFORM_DIR)/gds/*.gds) \
-                     $(ADDITIONAL_GDS_FILES)
+                     $(ADDITIONAL_GDS)
 
 # Dont use cells to ease congestion
 # Specify at least one filler cell if none
@@ -151,3 +151,10 @@ export RCX_RULES = $(PLATFORM_DIR)/rcx_patterns.rules
 export PWR_NETS_VOLTAGES  ?= "VDD 1.8"
 export GND_NETS_VOLTAGES  ?= "VSS 0.0"
 export IR_DROP_LAYER ?= met1
+
+# DRC Check
+export KLAYOUT_DRC_FILE = $(PLATFORM_DIR)/drc/$(PLATFORM).lydrc
+
+#LVS Check
+export CDL_FILE = $(PLATFORM_DIR)/cdl/$(PLATFORM).cdl
+export KLAYOUT_LVS_FILE = $(PLATFORM_DIR)/lvs/$(PLATFORM).lylvs
