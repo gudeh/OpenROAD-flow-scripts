@@ -6,22 +6,21 @@ import pandas as pd
 import torch.nn as nn
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+from pathlib import Path
+import dgl.nn as dglnn
 
 print("dgl.__version_",dgl.__version__)
+designPath = ""
 
-#root="aes_cipher_top/"
-root="myDataSet/"
 class DataSetFromYosys(DGLDataset):
 	def __init__(self):
 		super().__init__(name='mydata_from_yosys')
 
-	def process(self):
-		#nodes_data = pd.read_csv(root+'aes_DGLcells_labeled.csv')
-		nodes_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/c17/gatesToHeat.csv')
-#		node_labels = torch.from_numpy(nodes_data['ConnCount'].to_numpy())
-
-		#edges_data = pd.read_csv(root+'aes_DGLedges.csv')
-		edges_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/c17/DGLedges.csv')
+	def process( self ):
+#				nodes_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/c17/gatesToHeat.csv')
+#				edges_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/c17/DGLedges.csv')
+		nodes_data = pd.read_csv( designPath / 'gatesToHeat.csv' )
+		edges_data = pd.read_csv( designPath / 'DGLedges.csv')
 		edges_src = torch.from_numpy(edges_data['Src'].to_numpy())
 		edges_dst = torch.from_numpy(edges_data['Dst'].to_numpy())
 		#edge_features = torch.from_numpy(edges_data['Weight'].to_numpy())
@@ -35,7 +34,10 @@ class DataSetFromYosys(DGLDataset):
 		self.graph.ndata['powerHeat'] = torch.from_numpy (nodes_data['powerHeat'].to_numpy())
 		self.graph.ndata['routingHeat'] = torch.from_numpy (nodes_data['routingHeat'].to_numpy())
 		self.graph.ndata['irDropHeat'] = torch.from_numpy (nodes_data['irDropHeat'].to_numpy())
-	
+		
+		############
+		self.graph.ndata['label'] = self.graph.ndata['placementHeat']
+		############
 		#self.graph.edata['weight'] = edge_features
 
 		# If your dataset is a node classification dataset, you will need to assign
@@ -62,9 +64,6 @@ class DataSetFromYosys(DGLDataset):
 
 
 
-import dgl.nn as dglnn
-
-
 class SAGE(nn.Module):
     def __init__(self, in_feats, hid_feats, out_feats):
         super().__init__()
@@ -81,7 +80,7 @@ class SAGE(nn.Module):
         return h
 
 
-def evaluate(model, graph, features, labels, valid_mask, train_mask):
+def evaluate( model, graph, features, labels, valid_mask, train_mask ):
 	model.eval()
 	with torch.no_grad():
 		logits = model(graph, features)
@@ -99,14 +98,34 @@ def evaluate(model, graph, features, labels, valid_mask, train_mask):
 		trainAcc = correct.item() * 1.0 / len(labels)
 		
 		return trainAcc, validAcc
+		
+def evaluateNoMask( model, graph, features, labels ):
+	model.eval()
+	with torch.no_grad():
+#		logits = model(graph, features)
+#		logits = logits[valid_mask]
+#		labelsAux = labels[valid_mask]
+#		_, indices = torch.max(logits, dim=1)
+#		correct = torch.sum(indices == labelsAux)
+#		validAcc = correct.item() * 1.0 / len(labelsAux)
+		
+		logits = model(graph, features)
+#		logits = logits[train_mask]
+#		labels = labels[train_mask]
+		_, indices = torch.max(logits, dim=1)
+		correct = torch.sum(indices == labels)
+		trainAcc = correct.item() * 1.0 / len(labels)
+		
+		return trainAcc#, validAcc
 
 
 def regressionTrain(graph):
 #	node_features = graph.ndata['type'][None:1]
-#	print("graph.ndata['type']",type(graph.ndata['type']),graph.ndata['type'].shape,graph.ndata['type'].type())
-#	print("graph.ndata['conCount']",type(graph.ndata['conCount']),graph.ndata['conCount'].shape,graph.ndata['conCount'].type())
+	print("\n#################\n### TRAINING ####\n#################\n")
+	print("graph.ndata['type']",type(graph.ndata['type']),graph.ndata['type'].shape,graph.ndata['type'].type())
+	print("graph.ndata['conCount']",type(graph.ndata['conCount']),graph.ndata['conCount'].shape,graph.ndata['conCount'].type())
 	node_features = torch.cat([graph.ndata['type'].float()[:,None], graph.ndata['conCount'].float()[:,None]], dim=1)
-	#print("node_features",type(node_features),node_features.shape)
+	print("node_features",type(node_features),node_features.shape)
 	node_labels = graph.ndata['placementHeat'].long()
 	node_labels[ node_labels == -1 ] = 0
 	train_mask = graph.ndata['train_mask']
@@ -120,16 +139,19 @@ def regressionTrain(graph):
 	loss_hist = []
 	trainAccHist = []
 	validAccHist = []
-	epochs = 50
+	epochs = 10
+	
 	for epoch in range( epochs ):
 		model.train()
 		# forward propagation by using all nodes
 		logits = model(graph, node_features)
 		# compute loss
-		loss = F.cross_entropy(logits[train_mask], node_labels[train_mask])
+		loss = F.cross_entropy( logits[train_mask], node_labels[train_mask] )
 		loss_hist.append( loss.item() )
 		# compute validation accuracy
-		trainAcc, validAcc  = evaluate(model, graph, node_features, node_labels, valid_mask, train_mask)
+		#trainAcc, validAcc  = evaluate( model, graph, node_features, node_labels, valid_mask, train_mask )
+		trainAcc  = evaluateNoMask( model, graph, node_features, node_labels )#, valid_mask, train_mask )
+		validAcc = 0
 		trainAccHist.append( trainAcc )
 		validAccHist.append( validAcc )
 		# backward propagation
@@ -137,6 +159,7 @@ def regressionTrain(graph):
 		loss.backward()
 		opt.step()
 	
+	print("\n#################\n### END TRAIN ###\n#################\n")
 	print( "loss", loss.item(), "trainAcc", trainAcc, "validAcc", validAcc )
 	
 	fig, ax1 = plt.subplots()
@@ -158,26 +181,61 @@ def regressionTrain(graph):
 	#ax2.savefig(V5_Full_Loss.png)
 
 
+all_graphs = []
+print("Path.cwd():",Path.cwd())
+for designPath in Path( Path.cwd() ).iterdir():
+	if designPath.is_dir():
+		print("designPath:",designPath)
+		dataset = DataSetFromYosys(  )
+		all_graphs.append( dataset )
 
-dataset = DataSetFromYosys()
-#print("dataset:",dataset)
-graph = dataset[0]
-#graph.ndata['type'] = torch.nn.functional.one_hot(graph.ndata['type'].to(torch.int64))
-#graph.ndata['type'] = torch.from_numpy(graph.ndata['type'].astype('category').cat.codes.to_numpy())
+def doStuff(graph):
+#	graph = all_graphs[0][0]
+	print( "graph len:\n", graph )
+	#graph.ndata['type'] = torch.nn.functional.one_hot(graph.ndata['type'].to(torch.int64))
+	#graph.ndata['type'] = torch.from_numpy(graph.ndata['type'].astype('category').cat.codes.to_numpy())
 
-print("graph:",type(graph))
-print('We have %d nodes.' % graph.number_of_nodes())
-print('We have %d edges.' % graph.number_of_edges())
+	print("graph:",type(graph))
+	print('We have %d nodes.' % graph.number_of_nodes())
+	print('We have %d edges.' % graph.number_of_edges())
 
-import networkx as nx
-import matplotlib.pyplot as plt
-nx_G = graph.to_networkx()
-pos = nx.kamada_kawai_layout(nx_G)
-nx.draw(nx_G, pos, with_labels=True, node_color=[[.7, .7, .7]])
-plt.show()
+#	import networkx as nx
+#	import matplotlib.pyplot as plt
+#	nx_G = graph.to_networkx()
+#	pos = nx.kamada_kawai_layout(nx_G)
+#	nx.draw(nx_G, pos, with_labels=True, node_color=[[.7, .7, .7]])
+#	plt.show()
 
-print("len graph.ndata:",len(graph.ndata))
-print("type graph.ndata:",type(graph.ndata))
+	print("len graph.ndata:",len(graph.ndata))
+	print("type graph.ndata:",type(graph.ndata))
 
-#regressionTrain(graph)
+	regressionTrain(graph)
+	
+#regressionTrain( all_graphs[0][0] )
+
+#print("type(all_graphs[0]):", type(all_graphs[0]))
+#print("type(all_graphs[0][0]):", type(all_graphs[0][0]))
+#print("\n\n\n\n")
+#masterGraph = dgl.batch( [all_graphs[0][0], all_graphs[1][0]])#, all_graphs[2][0]] )
+#print( "type(masterGraph):",type(masterGraph) )
+#print( "masterGraph.batch_size:", masterGraph.batch_size )
+#print( "masterGraph.batch_num_nodes:", masterGraph.batch_num_nodes() )
+#print( "masterGraph.batch_num_edges:", masterGraph.batch_num_edges() )
+
+
+masterGraph = dgl.data.AsNodePredDataset( all_graphs[0], [0.8, 0.1, 0.1])#, target_ntype = "type" )
+print( "type(masterGraph):",type(masterGraph) )
+print( "type(masterGraph[0]):",type(masterGraph[0]) )
+print( "type(masterGraph[1]):",type(masterGraph[1]) )
+regressionTrain( masterGraph[0] )
+
+print("heyy!")
+
+
+
+
+from dgl.data.ppi import PPIDataset
+train_dataset = PPIDataset(mode='train')
+print("type(train_dataset)", type(train_dataset))
+
 
