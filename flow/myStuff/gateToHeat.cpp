@@ -184,6 +184,7 @@ int main(int argc, char** argv) {
     
     for ( auto& project : all_projects )
     {
+        cout<< "\n\nExecuting project:" << project << endl;
         string cellsPath = "";//, edgesPath;
         for ( auto &path : filesystem::directory_iterator( project ) )
         {
@@ -205,7 +206,7 @@ int main(int argc, char** argv) {
             
             if (path.path().extension() == ".csv" && path.path().string().find("gatesPosition") != string::npos)
             {
-                std::cout << path.path().stem().string() << '\n';
+                cout << "gates file:" << path.path().stem().string() << endl;
                 position_files.push_back( path.path().string() );
             }
         }
@@ -253,7 +254,7 @@ int main(int argc, char** argv) {
         } 
         
         rtree_type rtree;
-        cout<<"position_files[0] (only 1 file): "<<position_files[0]<<endl;
+        cout<<"position_files[0]: "<<position_files[0]<<endl;
         fstream filePositions( position_files[0], ios::in );
         getline( filePositions, myLine );
         while  ( getline( filePositions, myLine ) )
@@ -273,8 +274,9 @@ int main(int argc, char** argv) {
                 auto box_a = box_type{ point_type{ stod(row[1]), stod(row[2]) }, point_type{ stod(row[3]), stod(row[4]) } };            
                 rtree.insert( rtree_node_type{ box_a, row[0] } );
             }
-            else
-                cout<< "Gate added by OpenRoad: " << row[0] << ",pos:" << row[1] << "," << row[2] << "|" << row[3] << "," << row[4] << endl;
+//          TODO: what  todo when gates added by openroad/yosys? ignoring for now.            
+//            else
+//                cout<< "Gate added by OpenRoad: " << row[0] << ",pos:" << row[1] << "," << row[2] << "|" << row[3] << "," << row[4] << endl;
                 
 //            gate_to_heat.insert( pair< std::string, std::array< double, 4 > > ( row[0], std::array< double, 4 > { -1.0, -1.0, -1.0, -1.0 } ) );
         }
@@ -330,6 +332,7 @@ int main(int argc, char** argv) {
 //            myOut << "\n";
             it->second.printGate( myOut, it->first );
         }
+        cout<< "Finished project:" << project << endl;
     }
     
     cout << "Projects with erros:" << projectWithErrors.size() << endl;
