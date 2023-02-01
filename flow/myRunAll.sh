@@ -18,9 +18,9 @@ eval $command
 
 
 # performing training 
-command="cd myStuff && python3 regression.py > regression.log"
-printf "\n######\n$command\n######\n\n"
-eval $command
+#command="cd myStuff && python3 regression.py > regression.log"
+#printf "\n######\n$command\n######\n\n"
+#eval $command
 
 
 printf "\nmyRunall.sh: finished!\n"

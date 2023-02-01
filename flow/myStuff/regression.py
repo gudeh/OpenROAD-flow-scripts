@@ -8,15 +8,24 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from pathlib import Path
 import dgl.nn as dglnn
+from dgl.dataloading import GraphDataLoader
 
 print("dgl.__version_",dgl.__version__)
-designPath = ""
+#designPath = ""
 
-class DataSetFromYosys(DGLDataset):
-	def __init__(self):
-		super().__init__(name='mydata_from_yosys')
+class DataSetFromYosys( DGLDataset ):
+	def __init__( self, mode='train' ):
+		self.graphPaths = []
+		print("Path.cwd():",Path.cwd())
+		for designPath in Path( Path.cwd() ).iterdir():
+			if designPath.is_dir():
+				print("designPath:",designPath)
+				self.graphPaths.append( designPath )
+		self.mode = mode
+		super().__init__(name='mydata_from_yosys_'+mode)
+		
 
-	def process( self ):
+	def _process_single( self, designPath ):
 #				nodes_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/c17/gatesToHeat.csv')
 #				edges_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/c17/DGLedges.csv')
 		nodes_data = pd.read_csv( designPath / 'gatesToHeat.csv' )
@@ -27,7 +36,7 @@ class DataSetFromYosys(DGLDataset):
 
 		self.graph = dgl.graph((edges_src, edges_dst), num_nodes=nodes_data.shape[0])
 		self.graph.ndata['type'] = torch.from_numpy(nodes_data['type'].astype('category').cat.codes.to_numpy())
-		#print("self.graph.ndata['type']",type(self.graph.ndata['type']),self.graph.ndata['type'].shape,self.graph.ndata['type'].type())
+		#print("self.graph.ndata['type']!",type(self.graph.ndata['type']), "!!!!", self.graph.ndata['type'].shape, self.graph.ndata['type'].type())
 		self.graph.ndata['conCount'] = torch.from_numpy(nodes_data['conCount'].to_numpy())
 		
 		self.graph.ndata['placementHeat'] = torch.from_numpy (nodes_data['placementHeat'].to_numpy())
@@ -36,35 +45,42 @@ class DataSetFromYosys(DGLDataset):
 		self.graph.ndata['irDropHeat'] = torch.from_numpy (nodes_data['irDropHeat'].to_numpy())
 		
 		############
-		self.graph.ndata['label'] = self.graph.ndata['placementHeat']
+		#self.graph.ndata['label'] = self.graph.ndata['placementHeat']
 		############
 		#self.graph.edata['weight'] = edge_features
 
 		# If your dataset is a node classification dataset, you will need to assign
 		# masks indicating whether a node belongs to training, validation, and test set.
-		n_nodes = nodes_data.shape[0]
-		n_train = int(n_nodes * 0.6)
-		n_val = int(n_nodes * 0.2)
-		train_mask = torch.zeros(n_nodes, dtype=torch.bool)
-		val_mask = torch.zeros(n_nodes, dtype=torch.bool)
-		test_mask = torch.zeros(n_nodes, dtype=torch.bool)
-		train_mask[:n_train] = True
-		val_mask[n_train:n_train + n_val] = True
-		test_mask[n_train + n_val:] = True
-		self.graph.ndata['train_mask'] = train_mask
-		self.graph.ndata['val_mask'] = val_mask
-		self.graph.ndata['test_mask'] = test_mask
+#		n_nodes = nodes_data.shape[0]
+#		n_train = int(n_nodes * 0.6)
+#		n_val = int(n_nodes * 0.2)
+#		train_mask = torch.zeros(n_nodes, dtype=torch.bool)
+#		val_mask = torch.zeros(n_nodes, dtype=torch.bool)
+#		test_mask = torch.zeros(n_nodes, dtype=torch.bool)
+#		train_mask[:n_train] = True
+#		val_mask[n_train:n_train + n_val] = True
+#		test_mask[n_train + n_val:] = True
+#		self.graph.ndata['train_mask'] = train_mask
+#		self.graph.ndata['val_mask'] = val_mask
+#		self.graph.ndata['test_mask'] = test_mask
 
-	def __getitem__(self, i):
+
+	
+	def process( self ):
+		self.graphs = []
+		for path in self.graphPaths:
+		    graph = self._process_single( path )
+		    self.graphs.append( graph )
+            
+	def __getitem__( self, i ):
 		return self.graph
 
-	def __len__(self):
-		return 1
+	def __len__( self ):
+		#return 1
+		return len( self.graphs )
+		
 
-
-
-
-class SAGE(nn.Module):
+class SAGE( nn.Module ):
     def __init__(self, in_feats, hid_feats, out_feats):
         super().__init__()
         self.conv1 = dglnn.SAGEConv(
@@ -181,15 +197,7 @@ def regressionTrain(graph):
 	#ax2.savefig(V5_Full_Loss.png)
 
 
-all_graphs = []
-print("Path.cwd():",Path.cwd())
-for designPath in Path( Path.cwd() ).iterdir():
-	if designPath.is_dir():
-		print("designPath:",designPath)
-		dataset = DataSetFromYosys(  )
-		all_graphs.append( dataset )
-
-def doStuff(graph):
+def printGraph(graph):
 #	graph = all_graphs[0][0]
 	print( "graph len:\n", graph )
 	#graph.ndata['type'] = torch.nn.functional.one_hot(graph.ndata['type'].to(torch.int64))
@@ -211,6 +219,17 @@ def doStuff(graph):
 
 	regressionTrain(graph)
 	
+	
+
+
+
+
+dataset = DataSetFromYosys(  )
+print( "DS size:", len(dataset))
+train_dataloader = GraphDataLoader(dataset, batch_size=2)
+print( "data_loader", train_dataloader )
+
+	
 #regressionTrain( all_graphs[0][0] )
 
 #print("type(all_graphs[0]):", type(all_graphs[0]))
@@ -223,19 +242,28 @@ def doStuff(graph):
 #print( "masterGraph.batch_num_edges:", masterGraph.batch_num_edges() )
 
 
-masterGraph = dgl.data.AsNodePredDataset( all_graphs[0], [0.8, 0.1, 0.1])#, target_ntype = "type" )
-print( "type(masterGraph):",type(masterGraph) )
-print( "type(masterGraph[0]):",type(masterGraph[0]) )
-print( "type(masterGraph[1]):",type(masterGraph[1]) )
-regressionTrain( masterGraph[0] )
-
-print("heyy!")
 
 
 
+#print("len(dataset)", len(dataset))
+#print("dataset:", dataset)
+#print("dataset[0]:", dataset[0])
+#masterGraph = dgl.data.AsNodePredDataset( dataset, [0.8, 0.1, 0.1])#, target_ntype = "type" )
+#print( "len(masterGraph):",len(masterGraph) )
+#print( "type(masterGraph):",type(masterGraph) )
+#print( "type(masterGraph[0]):",type(masterGraph[0]) )
 
-from dgl.data.ppi import PPIDataset
-train_dataset = PPIDataset(mode='train')
-print("type(train_dataset)", type(train_dataset))
+
+
+#regressionTrain( masterGraph[0] )
+
+#print("heyy!")
+
+
+
+
+#from dgl.data.ppi import PPIDataset
+#train_dataset = PPIDataset(mode='train')
+#print("type(train_dataset)", type(train_dataset))
 
 
