@@ -1,4 +1,3 @@
-./designs/nangate45/ToyCircuits
 ./designs/nangate45/ToyCircuits/s35932
 ./designs/nangate45/ToyCircuits/s349
 ./designs/nangate45/ToyCircuits/s510
@@ -40,21 +39,3 @@
 ./designs/nangate45/ToyCircuits/s1196
 ./designs/nangate45/ToyCircuits/c1908
 ./designs/nangate45/ToyCircuits/DFF2
-
-
-
-
-./designs/nangate45/c17/config.mk
-./designs/nangate45/gcd/config.mk
-./designs/nangate45/aes/config.mk
-./designs/nangate45/black_parrot/config.mk
-./designs/nangate45/bp_be_top/config.mk
-./designs/nangate45/bp_fe_top/config.mk
-./designs/nangate45/bp_multi_top/config.mk
-./designs/nangate45/dynamic_node/config.mk
-./designs/nangate45/ibex/config.mk
-./designs/nangate45/jpeg/config.mk
-./designs/nangate45/swerv/config.mk
-./designs/nangate45/swerv_wrapper/config.mk
-./designs/nangate45/tiny-tests/config.mk
-./designs/nangate45/tinyRocket/config.mk
