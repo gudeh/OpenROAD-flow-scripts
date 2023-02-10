@@ -39,4 +39,3 @@
 ./designs/nangate45/ToyCircuits/s526/config.mk
 ./designs/nangate45/ToyCircuits/s1196/config.mk
 ./designs/nangate45/ToyCircuits/c1908/config.mk
-./designs/nangate45/ToyCircuits/DFF2/config.mk

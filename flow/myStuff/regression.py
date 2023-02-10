@@ -1,269 +1,380 @@
-import dgl
-from dgl.data import DGLDataset
-import torch
+import numpy as np
 import os
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
+import matplotlib.pyplot as plt
+from pathlib import Path #Reading CSV files
+import math #ceil()
+from random import shuffle #shuffle train/valid/test
+
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
-from pathlib import Path
-import dgl.nn as dglnn
-from dgl.dataloading import GraphDataLoader
+from torch.utils.tensorboard import SummaryWriter #Graphical visualization
 
-print("dgl.__version_",dgl.__version__)
-#designPath = ""
+import dgl
+from dgl.data import DGLDataset
+from dgl.dataloading import GraphDataLoader
+from dgl.data.ppi import PPIDataset #TODO remove
+import dgl.nn as dglnn
+from sklearn.metrics import r2_score, f1_score #Score metric
+import networkx as nx #drawing graphs
+
+
+#regression metrics:  https://scikit-learn.org/stable/modules/model_evaluation.html#regression-metrics
+#    mean_squared_error
+#    mean_absolute_error
+#    r2_score
+#    explained_variance_score
+#    mean_pinball_loss
+#    d2_pinball_score
+#    d2_absolute_error_score
+
+print( "torch.cuda.is_available():", torch.cuda.is_available() )
+print( "torch.cuda.device_count():", torch.cuda.device_count() )
+print( "torch.cuda.device(0):", torch.cuda.device(0) )
+print( "torch.cuda.get_device_name(0):", torch.cuda.get_device_name(0) )
+print( "dgl.__version_:", dgl.__version__ )
+
+featName = 'type' #'feat'
+labelName = 'placementHeat' #'label'
+#featName = 'feat'
+#labelName = 'label'
+
+
+def preProcessData( listDir ):
+    myDict = {}
+    toCsv  = []
+    for path in listDir:
+    #TODO NORMALIZE THE DATA INCLUDING CATEGORY!!
+        gateToHeat = pd.read_csv( path / 'gatesToHeat.csv', index_col = 'id' )
+#        edgesData  = pd.read_csv( path / 'DGLedges.csv')
+        #Other category encoder possibilities: https://contrib.scikit-learn.org/category_encoders/
+#        gateToHeat[ featName ] = ( torch.from_numpy( gateToHeat[ featName ].astype('category').cat.codes.to_numpy() ) ).int()
+        for category in gateToHeat[ featName ]:
+            if category no in myDict:
+                myDict[ category ] = category
+        gateToHeat = gateToHeat.replace( -1, 0.0 ) 
+#        for col in gateToHeat:
+#            toRemove = [ gateToHeat[col] == -1 ]
+#                for remove in toRemove:
+#                    #TODO
+#            print("\n\ntoRemove:\n", toRemove )
+
+        #gateToHeat.to_csv( path / 'preProcessedGatesToHeat.csv' )
+        toCsv.append( gateToHeat )
+        
+        
+     
+def analyzeData( listDir ):
+    aggregatedDF = pd.DataFrame()
+    for path in listDir:
+        inputData = pd.read_csv( path / 'preProcessedGatesToHeat.csv')#, index_col = 'type' )        
+        inputData = inputData[ [ featName, labelName, 'routingHeat' ] ]
+#        print( "inputData before concat:\n", inputData )
+        aggregatedDF = pd.concat( [ aggregatedDF, inputData ] )
+#    aggregatedDF.set_index( 'type' )
+    return aggregatedDF
 
 class DataSetFromYosys( DGLDataset ):
-	def __init__( self, mode='train' ):
-		self.graphPaths = []
-		print("Path.cwd():",Path.cwd())
-		for designPath in Path( Path.cwd() ).iterdir():
-			if designPath.is_dir():
-				print("designPath:",designPath)
-				self.graphPaths.append( designPath )
-		self.mode = mode
-		super().__init__(name='mydata_from_yosys_'+mode)
-		
+    
+    def __init__( self, listDir, split, mode='train' ):    
+    
+        if len( split ) != 3 or sum( split ) != 1.0:
+            print("!!!!ERROR!!!!")
+            
+        self.graphPaths = []
+        self.graphs = []
+        self.names = []
+        allNames = []
+        self.mode = mode
 
-	def _process_single( self, designPath ):
-#				nodes_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/c17/gatesToHeat.csv')
-#				edges_data = pd.read_csv('/home/gudeh/Desktop/OpenROAD-flow-scripts/flow/myStuff/c17/DGLedges.csv')
-		nodes_data = pd.read_csv( designPath / 'gatesToHeat.csv' )
-		edges_data = pd.read_csv( designPath / 'DGLedges.csv')
-		edges_src = torch.from_numpy(edges_data['Src'].to_numpy())
-		edges_dst = torch.from_numpy(edges_data['Dst'].to_numpy())
-		#edge_features = torch.from_numpy(edges_data['Weight'].to_numpy())
+        for idx in range( len( listDir ) ):
+            allNames.append( str( listDir[idx] ).rsplit( '/' )[-1] )
+            print( allNames[idx],",", end="" )
+#        train, validate, test = np.split(files, [int(len(files)*0.8), int(len(files)*0.9)])
+        firstSlice  = math.ceil( len( listDir )*split[0] ) - 1
+        secondSlice = math.ceil( len( listDir )*split[1] + firstSlice ) 
+        print( "\nlen(listDir)",len(listDir))
+        print( "firstSlice:", firstSlice, "\nsecondSlice", secondSlice )
+        if mode == 'train':
+            self.graphPaths = listDir [ : firstSlice ]
+            self.names      = allNames[ : firstSlice ]
+        elif mode == 'valid':
+            self.graphPaths = listDir [ firstSlice: secondSlice ]
+            self.names      = allNames[ firstSlice: secondSlice ]
+        elif mode == 'test':
+            self.graphPaths = listDir [ secondSlice : ]
+            self.names      = allNames[ secondSlice : ]
 
-		self.graph = dgl.graph((edges_src, edges_dst), num_nodes=nodes_data.shape[0])
-		self.graph.ndata['type'] = torch.from_numpy(nodes_data['type'].astype('category').cat.codes.to_numpy())
-		#print("self.graph.ndata['type']!",type(self.graph.ndata['type']), "!!!!", self.graph.ndata['type'].shape, self.graph.ndata['type'].type())
-		self.graph.ndata['conCount'] = torch.from_numpy(nodes_data['conCount'].to_numpy())
-		
-		self.graph.ndata['placementHeat'] = torch.from_numpy (nodes_data['placementHeat'].to_numpy())
-		self.graph.ndata['powerHeat'] = torch.from_numpy (nodes_data['powerHeat'].to_numpy())
-		self.graph.ndata['routingHeat'] = torch.from_numpy (nodes_data['routingHeat'].to_numpy())
-		self.graph.ndata['irDropHeat'] = torch.from_numpy (nodes_data['irDropHeat'].to_numpy())
-		
-		############
-		#self.graph.ndata['label'] = self.graph.ndata['placementHeat']
-		############
-		#self.graph.edata['weight'] = edge_features
+        super().__init__( name='mydata_from_yosys_'+mode )
 
-		# If your dataset is a node classification dataset, you will need to assign
-		# masks indicating whether a node belongs to training, validation, and test set.
-#		n_nodes = nodes_data.shape[0]
-#		n_train = int(n_nodes * 0.6)
-#		n_val = int(n_nodes * 0.2)
-#		train_mask = torch.zeros(n_nodes, dtype=torch.bool)
-#		val_mask = torch.zeros(n_nodes, dtype=torch.bool)
-#		test_mask = torch.zeros(n_nodes, dtype=torch.bool)
-#		train_mask[:n_train] = True
-#		val_mask[n_train:n_train + n_val] = True
-#		test_mask[n_train + n_val:] = True
-#		self.graph.ndata['train_mask'] = train_mask
-#		self.graph.ndata['val_mask'] = val_mask
-#		self.graph.ndata['test_mask'] = test_mask
-
-
-	
-	def process( self ):
-		self.graphs = []
-		for path in self.graphPaths:
+    def process( self ):
+	    for path in self.graphPaths:
 		    graph = self._process_single( path )
 		    self.graphs.append( graph )
-            
-	def __getitem__( self, i ):
-		return self.graph
 
-	def __len__( self ):
-		#return 1
-		return len( self.graphs )
-		
+    def _process_single( self, designPath ):
+#        print("designPath in _process_single:", designPath )
+        nodes_data = pd.read_csv( designPath / 'preProcessedGatesToHeat.csv' )
+        edgesData  = pd.read_csv( path / 'DGLedges.csv')
+#        edges_data = pd.read_csv( designPath / 'preProcessedDGLedges.csv')
+        edges_src  = torch.from_numpy( edges_data['Src'].to_numpy() )
+        edges_dst  = torch.from_numpy( edges_data['Dst'].to_numpy() )
+
+        self.graph = dgl.graph( ( edges_src, edges_dst ), num_nodes = nodes_data.shape[0] ) #TODO int problem fix here
+        self.graph.ndata[ featName ] = ( torch.from_numpy( nodes_data[ featName ].to_numpy() ) ).int()
+        
+        #self.graph.ndata['conCount'] = torch.from_numpy(nodes_data['conCount'].to_numpy())        #TODO possible feature, needs fix in yosys
+
+        self.graph.ndata[ labelName ] = ( torch.from_numpy ( nodes_data[ labelName ].to_numpy() ) )#.float()
+        self.graph.ndata['routingHeat'] = ( torch.from_numpy ( nodes_data['routingHeat'].to_numpy() ) )#.float()        
+#        self.graph.ndata['powerHeat'] = torch.from_numpy (nodes_data['powerHeat'].to_numpy()).float()
+#        self.graph.ndata['irDropHeat'] = torch.from_numpy (nodes_data['irDropHeat'].to_numpy()).float()
+
+#        print( "RETURNING GRAPH:\n", self.graph )
+        return self.graph
+           
+    def __getitem__( self, i ):
+	    return self.graphs[i]
+
+    def __len__( self ):
+	    #return 1
+	    return len( self.graphs )
+	    
+    def printDataset( self ):
+        print( "\n\n", self.mode, "size:", len( self.graphs ) )
+        for idx in range( len( self.graphs ) ):
+            print( "\t>>>", idx," - ", self.names[idx] ) #, "\n", self.graphs[idx] )
+            #drawGraph( self.graphs[idx], self.names[idx] )
+
+    
 
 class SAGE( nn.Module ):
-    def __init__(self, in_feats, hid_feats, out_feats):
-        super().__init__()
-        self.conv1 = dglnn.SAGEConv(
-            in_feats=in_feats, out_feats=hid_feats, aggregator_type='lstm')
-        self.conv2 = dglnn.SAGEConv(
-            in_feats=hid_feats, out_feats=out_feats, aggregator_type='lstm')
+	def __init__(self, in_feats, hid_feats, out_feats):
+		super().__init__()
+		self.conv1 = dglnn.SAGEConv( in_feats=in_feats, out_feats=hid_feats, aggregator_type='lstm' )
+		self.conv2 = dglnn.SAGEConv( in_feats=hid_feats, out_feats=out_feats, aggregator_type='lstm' )
 
-    def forward(self, graph, inputs):
-        # inputs are features of nodes
-        h = self.conv1(graph, inputs)
-        h = F.relu(h)
-        h = self.conv2(graph, h)
-        return h
+	def forward(self, graph, inputs):
+		# inputs are features of nodes
+		h = self.conv1( graph, inputs )
+		h = F.relu(h)
+		h = self.conv2( graph, h )
+		return h
 
 
-def evaluate( model, graph, features, labels, valid_mask, train_mask ):
-	model.eval()
-	with torch.no_grad():
-		logits = model(graph, features)
-		logits = logits[valid_mask]
-		labelsAux = labels[valid_mask]
-		_, indices = torch.max(logits, dim=1)
-		correct = torch.sum(indices == labelsAux)
-		validAcc = correct.item() * 1.0 / len(labelsAux)
-		
-		logits = model(graph, features)
-		logits = logits[train_mask]
-		labels = labels[train_mask]
-		_, indices = torch.max(logits, dim=1)
-		correct = torch.sum(indices == labels)
-		trainAcc = correct.item() * 1.0 / len(labels)
-		
-		return trainAcc, validAcc
-		
-def evaluateNoMask( model, graph, features, labels ):
-	model.eval()
-	with torch.no_grad():
-#		logits = model(graph, features)
-#		logits = logits[valid_mask]
-#		labelsAux = labels[valid_mask]
-#		_, indices = torch.max(logits, dim=1)
-#		correct = torch.sum(indices == labelsAux)
-#		validAcc = correct.item() * 1.0 / len(labelsAux)
-		
-		logits = model(graph, features)
-#		logits = logits[train_mask]
-#		labels = labels[train_mask]
-		_, indices = torch.max(logits, dim=1)
-		correct = torch.sum(indices == labels)
-		trainAcc = correct.item() * 1.0 / len(labels)
-		
-		return trainAcc#, validAcc
+def drawGraph(graph, graphName):
+#    print("graph:",type(graph))
+#    print('We have %d nodes.' % graph.number_of_nodes())
+#    print('We have %d edges.' % graph.number_of_edges())
+    nx_G = graph.to_networkx()
+    pos = nx.kamada_kawai_layout(nx_G)
+    plt.figure(figsize=[15,7])
+    nx.draw(nx_G, pos, with_labels=True, node_color=[[.7, .7, .7]])
+    #	plt.show()
+    plt.savefig(graphName)
 
-
-def regressionTrain(graph):
-#	node_features = graph.ndata['type'][None:1]
-	print("\n#################\n### TRAINING ####\n#################\n")
-	print("graph.ndata['type']",type(graph.ndata['type']),graph.ndata['type'].shape,graph.ndata['type'].type())
-	print("graph.ndata['conCount']",type(graph.ndata['conCount']),graph.ndata['conCount'].shape,graph.ndata['conCount'].type())
-	node_features = torch.cat([graph.ndata['type'].float()[:,None], graph.ndata['conCount'].float()[:,None]], dim=1)
-	print("node_features",type(node_features),node_features.shape)
-	node_labels = graph.ndata['placementHeat'].long()
-	node_labels[ node_labels == -1 ] = 0
-	train_mask = graph.ndata['train_mask']
-	valid_mask = graph.ndata['val_mask']
-	test_mask = graph.ndata['test_mask']
-	n_features = node_features.shape[1]
-	n_labels = int(node_labels.max().item() + 1)
-
-	model = SAGE(in_feats=n_features, hid_feats=100, out_feats=n_labels)
-	opt = torch.optim.Adam(model.parameters(), lr=0.03)
-	loss_hist = []
-	trainAccHist = []
-	validAccHist = []
-	epochs = 10
-	
-	for epoch in range( epochs ):
-		model.train()
-		# forward propagation by using all nodes
-		logits = model(graph, node_features)
-		# compute loss
-		loss = F.cross_entropy( logits[train_mask], node_labels[train_mask] )
-		loss_hist.append( loss.item() )
-		# compute validation accuracy
-		#trainAcc, validAcc  = evaluate( model, graph, node_features, node_labels, valid_mask, train_mask )
-		trainAcc  = evaluateNoMask( model, graph, node_features, node_labels )#, valid_mask, train_mask )
-		validAcc = 0
-		trainAccHist.append( trainAcc )
-		validAccHist.append( validAcc )
-		# backward propagation
-		opt.zero_grad()
-		loss.backward()
-		opt.step()
-	
-	print("\n#################\n### END TRAIN ###\n#################\n")
-	print( "loss", loss.item(), "trainAcc", trainAcc, "validAcc", validAcc )
-	
-	fig, ax1 = plt.subplots()
-	ax2 = ax1.twinx()
-	epochs_list = [i for i in range(epochs)]
-	ax1.plot(epochs_list, trainAccHist, label='Training accuracy')
-	ax1.plot(epochs_list, validAccHist, label='Validation accuracy')
-	ax1.set_ylabel('Accuracy')
-	ax1.set_xlabel('epochs')
-	ax1.legend()
-
-	ax2.plot(epochs_list, loss_hist, label='Training loss', color = 'g')
-#	ax2.plot(epochs_list, val_loss, label='Validation loss')
-	ax2.set_ylabel('Loss')
-	ax2.set_xlabel('epochs')
-	ax2.legend()
-	plt.draw()
-	plt.show()
-	#ax2.savefig(V5_Full_Loss.png)
-
-
-def printGraph(graph):
-#	graph = all_graphs[0][0]
-	print( "graph len:\n", graph )
-	#graph.ndata['type'] = torch.nn.functional.one_hot(graph.ndata['type'].to(torch.int64))
-	#graph.ndata['type'] = torch.from_numpy(graph.ndata['type'].astype('category').cat.codes.to_numpy())
-
-	print("graph:",type(graph))
-	print('We have %d nodes.' % graph.number_of_nodes())
-	print('We have %d edges.' % graph.number_of_edges())
-
-#	import networkx as nx
-#	import matplotlib.pyplot as plt
-#	nx_G = graph.to_networkx()
-#	pos = nx.kamada_kawai_layout(nx_G)
-#	nx.draw(nx_G, pos, with_labels=True, node_color=[[.7, .7, .7]])
-#	plt.show()
-
-	print("len graph.ndata:",len(graph.ndata))
-	print("type graph.ndata:",type(graph.ndata))
-
-	regressionTrain(graph)
-	
-	
-
-
-
-
-dataset = DataSetFromYosys(  )
-print( "DS size:", len(dataset))
-train_dataloader = GraphDataLoader(dataset, batch_size=2)
-print( "data_loader", train_dataloader )
+#    print("len graph.ndata:",len(graph.ndata))
+#    print("type graph.ndata:",type(graph.ndata))
 
 	
-#regressionTrain( all_graphs[0][0] )
 
-#print("type(all_graphs[0]):", type(all_graphs[0]))
-#print("type(all_graphs[0][0]):", type(all_graphs[0][0]))
-#print("\n\n\n\n")
-#masterGraph = dgl.batch( [all_graphs[0][0], all_graphs[1][0]])#, all_graphs[2][0]] )
-#print( "type(masterGraph):",type(masterGraph) )
-#print( "masterGraph.batch_size:", masterGraph.batch_size )
-#print( "masterGraph.batch_num_nodes:", masterGraph.batch_num_nodes() )
-#print( "masterGraph.batch_num_edges:", masterGraph.batch_num_edges() )
+class GAT( nn.Module ):
+	def __init__( self, in_size, hid_size, out_size, heads ):
+		super().__init__()
+		self.gat_layers = nn.ModuleList()
+		# three-layer GAT
+#		self.gat_layers.append(dglnn.GATConv(in_size, hid_size, heads[0], activation=F.elu))
+#		self.gat_layers.append(dglnn.GATConv(hid_size*heads[0], hid_size, heads[1], residual=True, activation=F.elu))
+#		self.gat_layers.append(dglnn.GATConv(hid_size*heads[1], out_size, heads[2], residual=True, activation=None))
+		print("\n\nINIT GAT!!")
+		print("in_size:", in_size)
+		print("hid_size:", hid_size)
+		for k,head in enumerate( heads ):
+			print("head:", k,head)
+		print("out_size", out_size)
+		self.gat_layers.append( dglnn.GATConv( in_size, hid_size, heads[0], activation=F.elu, allow_zero_in_degree=True ) )
+		self.gat_layers.append( dglnn.GATConv( hid_size*heads[0], hid_size, heads[1], residual=True, activation=F.elu, allow_zero_in_degree=True ) )
+		self.gat_layers.append( dglnn.GATConv( hid_size*heads[1], out_size, heads[2], residual=True, activation=None, allow_zero_in_degree=True ) )
+
+	def forward( self, g, inputs ):
+		h = inputs
+		for i, layer in enumerate( self.gat_layers ):
+			h = layer( g, h )
+			if i == 2:  # last layer 
+				h = h.mean(1)
+			else:       # other layer(s)
+				h = h.flatten(1)
+		return h
+
+ 
+def evaluate( g, features, labels, model ):
+    model.eval()
+    with torch.no_grad():
+#        print(">>>features in evaluate:",type(features),features.shape)
+#        print("\n",features,"\n")
+#        print(">>> g in evaluate:",type(g),"\n",g,"\n")
+        if( features.dim() == 1 ):
+            features = features.unsqueeze(1)
+        output = model( g, features )
+#        print("++++ output:",type(output),"\n",output.shape,"\n",output.transpose)
+#        pred = np.where( output.data.cpu().numpy() >= 0, 1, 0) #this is not like this
+##        print("++++ pred:",type(pred),"\n",pred.shape,"\n", np.transpose(pred ))
+#        score = f1_score( labels.data.cpu().numpy(), pred, average='micro' )
+        score = r2_score( labels.data.cpu().numpy(), output )
+        return score
+
+def evaluate_in_batches(dataloader, device, model):
+    total_score = 0
+    for batch_id, batched_graph in enumerate(dataloader):
+        batched_graph = batched_graph.to(device)
+        features = batched_graph.ndata[ featName ].float()
+        labels = batched_graph.ndata[ labelName ]#.float()
+#        print("features in evaluate_in_batches:", type(features), features.shape,"\n", features )
+#        print("labels in evaluate_in_batches:", type(labels), labels.shape,"\n", labels )
+        score = evaluate( batched_graph, features, labels, model )
+        total_score += score
+    return total_score / (batch_id + 1) # return average score
 
 
+def train( train_dataloader, val_dataloader, device, model, writerName ):
+    print( "device in train:", device )
+    writer = SummaryWriter( writerName )
+    
+    #loss_fcn = nn.BCEWithLogitsLoss()
+#    loss_fcn = nn.CrossEntropyLoss()
+#    loss_fcn = nn.L1Loss() 
+    
+    loss_fcn = nn.MSELoss()
+    optimizer = torch.optim.Adam( model.parameters(), lr=5e-3, weight_decay=0 )
+
+    # training loop
+    for epoch in range( 500 ):
+        model.train()
+        logits = []
+        total_loss = 0
+        # mini-batch loop
+        for batch_id, batched_graph in enumerate( train_dataloader ):
+            batched_graph = batched_graph.to(device)
+#            print("->batched_graph",batched_graph)			
+#            print("\t%%%% Batch ID ", batch_id )
+            features = batched_graph.ndata[ featName ].float()
+            if( features.dim() == 1 ):
+#                print("\n\n\nUNSQUEZING\n\n\n")
+                features = features.float().unsqueeze(1)
+            #print("->features in train:",type(features),features.shape,"\n", features.dtype)
+            #print("\n",features)
+
+            logits = model( batched_graph, features )
+            labels = batched_graph.ndata[ labelName ].float()
+            if( labels.dim() == 1 ): # required if, don't know why shape dont match
+                labels = labels.unsqueeze(-1)
+
+#            print("->labels in train:",type(labels),labels.shape)
+#            print("\n",labels)
+            loss = loss_fcn( logits, labels )
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+            
+        avg_score = evaluate_in_batches( val_dataloader, device, model )
+        writer.add_scalar( "Loss Train", total_loss / (batch_id + 1), epoch )
+        writer.add_scalar( "Score Valid", avg_score, epoch )
+        print("Epoch {:05d} | Loss {:.4f} |". format(epoch, total_loss / (batch_id + 1) ))
+        
+        if (epoch + 1) % 5 == 0:
+            #avg_score = evaluate_in_batches( val_dataloader, device, model) # evaluate r2-score instead of loss
+            print("                            Acc. (r2-score) {:.4f} ". format(avg_score))
+    writer.flush()
+    writer.close()
 
 
+if __name__ == '__main__':
+    print(f'Training Yosys Dataset with DGL built-in GATConv module.')
+    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cpu')
 
-#print("len(dataset)", len(dataset))
-#print("dataset:", dataset)
-#print("dataset[0]:", dataset[0])
-#masterGraph = dgl.data.AsNodePredDataset( dataset, [0.8, 0.1, 0.1])#, target_ntype = "type" )
-#print( "len(masterGraph):",len(masterGraph) )
-#print( "type(masterGraph):",type(masterGraph) )
-#print( "type(masterGraph[0]):",type(masterGraph[0]) )
+#    train_dataset = PPIDataset(mode='train')
+#    val_dataset = PPIDataset(mode='valid')
+#    test_dataset = PPIDataset(mode='test')
+    listDir = []	
+    for designPath in Path( Path.cwd() ).iterdir():
+        if designPath.is_dir() and "runs" not in str( designPath ):
+            listDir.append( designPath )
 
+    if( featName != 'feat' ):
+        preProcessData( listDir )
+                
+################################################################################
+################################################################################
+    if( featName != 'feat' ):
+        df = analyzeData( listDir )
+    print( "allDFs:\n", df )
+    for col in df:
+        print( df[ col ].describe() )
+    df.to_csv( "aggregatedDF.csv" )
+    df.hist( bins = 50, figsize = (15,12) )
+    plt.savefig( "train+valid+test" )
+    
+    #df.plot( kind = "scatter",  x = "placementHeat", y = "type" )
+    df.plot.area( figsize = (15,12), subplots = True )
+    plt.savefig( "scatterPlacement" )
+################################################################################
+################################################################################    
+    
+    shuffle( listDir )
+    split = [ 0.8, 0.1, 0.1 ]
+    train_dataset = DataSetFromYosys( listDir, split, mode='train' )
+    val_dataset   = DataSetFromYosys( listDir, split, mode='valid' )
+    test_dataset  = DataSetFromYosys( listDir, split, mode='test'  )
 
+    train_dataset.printDataset()    
+    val_dataset.printDataset()    
+    test_dataset.printDataset()    
 
-#regressionTrain( masterGraph[0] )
+    features = train_dataset[0].ndata[ featName ]      
+    if( features.dim() == 1 ):
+        features = features.unsqueeze(1)
+    
+    #features = torch.cat( [train_dataset[0].ndata[ featName ][:,None]], dim=1 ) #TODO sometimes shape is unidimension
+    in_size = features.shape[1]
+    print("features.shape",features.shape)
 
-#print("heyy!")
+    #	node_labels = train_dataset[0].ndata[ labelName ].float()
+    #	node_labels[ node_labels == -1 ] = 0
+    #	out_size = int(node_labels.max().item() + 1)
+#    out_size = train_dataset.num_labels
+    out_size = 1 #TODO parametrize this
 
+    print("in_size",in_size,",  out_size",out_size)
+    model = GAT(in_size, 256, out_size, heads=[4,4,6]).to(device)
+    #model = SAGE( in_feats = in_size, hid_feats=100, out_feats = out_size )
 
+    print( "\n###################"   )
+    print( "\n## MODEL DEFINED ##"   )
+    print( "\n###################\n" )
+    
+    train_dataloader = GraphDataLoader( train_dataset, batch_size=2 )
+    val_dataloader   = GraphDataLoader( val_dataset,   batch_size=1 )
+    test_dataloader  = GraphDataLoader( test_dataset,  batch_size=1 )
+    #	train_dataloader = ppi_dataloader
+    #	val_dataloader = ppi_dataloader
+    #print( "\n\n-->train_dataloader", type(train_dataloader),"\n", train_dataloader)
+    for batch_id, batched_graph in enumerate( train_dataloader ):
+	    batched_graph = batched_graph.to(device)
+	    print("batch_id",batch_id)#"->batched_graph",type(batched_graph),"\n",batched_graph)
 
+    print( "\n\n\n\nlen len len\n\n\n\n", len(train_dataloader), len(val_dataloader), len(test_dataloader) )
+    writerName = str( len(train_dataloader) ) + "/" + str( len(val_dataloader) ) + "/" + str( len(test_dataloader) )
+    #print( "\n\nval_dataloader", type(val_dataloader),"\n", val_dataloader)
+    train( train_dataloader, val_dataloader, device, model, writerName )
 
-#from dgl.data.ppi import PPIDataset
-#train_dataset = PPIDataset(mode='train')
-#print("type(train_dataset)", type(train_dataset))
+    # test the model
+    print('Testing...')    
+    avg_score = evaluate_in_batches( test_dataloader, device, model )
+    #	print("Test Accuracy (F1-score) {:.4f}".format(avg_score))
+    print("Test Accuracy (r2-score) {:.4f}".format(avg_score))
 
 

@@ -4,7 +4,7 @@ for x in *.v; do
   mkdir "${x%.*}" 
   
   printf "${x}\n"
-#  cp "$x" "${x%.*}" # use this first for designs/src, the rest goes on designs/nangate45/
+#  cp "$x" "${x%.*}" # use this line first for designs/src, the rest goes on designs/nangate45/
   cp constraint.sdc "${x%.*}"
   cp config.mk "${x%.*}"
   cp rules-base.json "${x%.*}"
@@ -12,6 +12,7 @@ for x in *.v; do
   
   sed -i "s@c17@${x%.*}@" "${x%.*}/constraint.sdc"
   sed -i "s@c17@${x%.*}@" "${x%.*}/config.mk"
+  sed -i "s@c17@${x%.*}@" "${x%.*}/metadata-base-ok.json"
 done
 
 
