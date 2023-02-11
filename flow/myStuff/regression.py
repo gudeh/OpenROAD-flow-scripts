@@ -44,16 +44,16 @@ labelName = 'placementHeat' #'label'
 
 def preProcessData( listDir ):
     myDict = {}
-    toCsv  = []
+    graphs  = {}
     for path in listDir:
     #TODO NORMALIZE THE DATA INCLUDING CATEGORY!!
-        gateToHeat = pd.read_csv( path / 'gatesToHeat.csv', index_col = 'id' )
+        gateToHeat = pd.read_csv( path / 'gatesToHeat.csv', index_col = 'id', dtype = { 'type':'category' } )
 #        edgesData  = pd.read_csv( path / 'DGLedges.csv')
         #Other category encoder possibilities: https://contrib.scikit-learn.org/category_encoders/
 #        gateToHeat[ featName ] = ( torch.from_numpy( gateToHeat[ featName ].astype('category').cat.codes.to_numpy() ) ).int()
         for category in gateToHeat[ featName ]:
-            if category no in myDict:
-                myDict[ category ] = category
+            if category not in myDict:
+                myDict[ category ] = len( myDict )
         gateToHeat = gateToHeat.replace( -1, 0.0 ) 
 #        for col in gateToHeat:
 #            toRemove = [ gateToHeat[col] == -1 ]
@@ -62,7 +62,13 @@ def preProcessData( listDir ):
 #            print("\n\ntoRemove:\n", toRemove )
 
         #gateToHeat.to_csv( path / 'preProcessedGatesToHeat.csv' )
-        toCsv.append( gateToHeat )
+        graphs[ path ] = gateToHeat#.append( gateToHeat )
+    print( "\n\n\nmyDict:\n", myDict )
+    for key, g in graphs.items():
+        g[ featName ] = g[ featName ].cat.rename_categories( myDict )
+        #print("\n->g:\n",g)
+        print( "\ng[ featName ]:\n", g[ featName ] )
+        g.to_csv( key / 'preProcessedGatesToHeat.csv' )
         
         
      
@@ -117,7 +123,7 @@ class DataSetFromYosys( DGLDataset ):
     def _process_single( self, designPath ):
 #        print("designPath in _process_single:", designPath )
         nodes_data = pd.read_csv( designPath / 'preProcessedGatesToHeat.csv' )
-        edgesData  = pd.read_csv( path / 'DGLedges.csv')
+        edges_data  = pd.read_csv( designPath / 'DGLedges.csv')
 #        edges_data = pd.read_csv( designPath / 'preProcessedDGLedges.csv')
         edges_src  = torch.from_numpy( edges_data['Src'].to_numpy() )
         edges_dst  = torch.from_numpy( edges_data['Dst'].to_numpy() )
@@ -293,8 +299,8 @@ def train( train_dataloader, val_dataloader, device, model, writerName ):
 
 if __name__ == '__main__':
     print(f'Training Yosys Dataset with DGL built-in GATConv module.')
-    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = torch.device('cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    #device = torch.device('cpu')
 
 #    train_dataset = PPIDataset(mode='train')
 #    val_dataset = PPIDataset(mode='valid')
@@ -367,7 +373,7 @@ if __name__ == '__main__':
 	    print("batch_id",batch_id)#"->batched_graph",type(batched_graph),"\n",batched_graph)
 
     print( "\n\n\n\nlen len len\n\n\n\n", len(train_dataloader), len(val_dataloader), len(test_dataloader) )
-    writerName = str( len(train_dataloader) ) + "/" + str( len(val_dataloader) ) + "/" + str( len(test_dataloader) )
+    writerName = "runs" + str( len(train_dataloader) ) + "-" + str( len(val_dataloader) ) + "-" + str( len(test_dataloader) )
     #print( "\n\nval_dataloader", type(val_dataloader),"\n", val_dataloader)
     train( train_dataloader, val_dataloader, device, model, writerName )
 
