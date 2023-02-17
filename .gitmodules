@@ -7,3 +7,6 @@
 [submodule "tools/LSOracle"]
 	path = tools/LSOracle
 	url = https://github.com/The-OpenROAD-Project/LSOracle.git
+[submodule "flow/congestionPrediction"]
+	path = flow/congestionPrediction
+	url = https://github.com/gudeh/congestionPrediction.git
