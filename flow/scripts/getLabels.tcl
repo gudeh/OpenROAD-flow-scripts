@@ -60,13 +60,18 @@ if {![info exist ::env(GUI_NO_TIMING)]} {
 ################################################################
 ################# My additions from gui.tcl #####################
 ################################################################
-set dirPath myStuff/${::env(DESIGN_NAME)}
+set dirPath congestionPrediction/${::env(DESIGN_NAME)}
 file mkdir $dirPath
 
-#moving yosys outpupt files (it doesnt have access to design names)
-file rename -force myStuff/DGLedges.csv myStuff/${::env(DESIGN_NAME)}/DGLedges.csv
-file rename -force myStuff/DGLcells.csv myStuff/${::env(DESIGN_NAME)}/DGLcells.csv
+#for printScreens of layouts
+set dirPath2 congestionPrediction/layoutPrints
+file mkdir $dirPath2
 
+#moving yosys outpupt files (it doesnt have access to design names)
+file rename -force congestionPrediction/DGLedges.csv congestionPrediction/${::env(DESIGN_NAME)}/DGLedges.csv
+file rename -force congestionPrediction/DGLcells.csv congestionPrediction/${::env(DESIGN_NAME)}/DGLcells.csv
+
+#Write the position of each node
 set dut gatesPosition_
 set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
 set myout [open $myname w]
@@ -78,10 +83,14 @@ foreach inst [$block getInsts] {
 }
 close $myout
 
-
+#Write a CSV for each heat value
 set dut placementHeat_
 set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
 gui::dump_heatmap Placement $myname
+
+#layout printscreen
+set psname ${dirPath2}/${dut}${::env(DESIGN_NAME)}
+save_image psname
 
 set dut powerHeat_
 set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
