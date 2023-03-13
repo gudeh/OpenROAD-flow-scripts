@@ -60,7 +60,7 @@ if {![info exist ::env(GUI_NO_TIMING)]} {
 ################################################################
 ################# My additions from gui.tcl #####################
 ################################################################
-set dirPath congestionPrediction/${::env(DESIGN_NAME)}
+set dirPath congestionPrediction/dataSet/${::env(DESIGN_NAME)}
 file mkdir $dirPath
 
 #for printScreens of layouts
@@ -68,8 +68,8 @@ set dirPath2 congestionPrediction/layoutPrints
 file mkdir $dirPath2
 
 #moving yosys outpupt files (it doesnt have access to design names)
-file rename -force congestionPrediction/DGLedges.csv congestionPrediction/${::env(DESIGN_NAME)}/DGLedges.csv
-file rename -force congestionPrediction/DGLcells.csv congestionPrediction/${::env(DESIGN_NAME)}/DGLcells.csv
+file rename -force congestionPrediction/DGLedges.csv congestionPrediction/dataSet/${::env(DESIGN_NAME)}/DGLedges.csv
+file rename -force congestionPrediction/DGLcells.csv congestionPrediction/dataSet/${::env(DESIGN_NAME)}/DGLcells.csv
 
 #Write the position of each node
 set dut gatesPosition_
@@ -83,24 +83,36 @@ foreach inst [$block getInsts] {
 }
 close $myout
 
-#Write a CSV for each heat value
+################## PLACEMENT #################
 set dut placementHeat_
 set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
 gui::dump_heatmap Placement $myname
 
-#layout printscreen
-set psname ${dirPath2}/${dut}${::env(DESIGN_NAME)}
-save_image psname
+#layout printscreen placement
+gui::set_display_controls "Heat Maps/Placement Density" visible true
+set psname ${dirPath2}/${dut}${::env(DESIGN_NAME)}.png
+save_image $psname
 
+
+################## POWER #################
 set dut powerHeat_
 set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
 gui::dump_heatmap Power $myname
 
+
+################## ROUTING #################
 read_guides $::env(RESULTS_DIR)/route.guide
 set dut routingHeat_
 set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
 gui::dump_heatmap Routing $myname
 
+#layout printscreen Routing
+gui::set_display_controls "Heat Maps/Routing Congestion" visible true
+set psname ${dirPath2}/${dut}${::env(DESIGN_NAME)}.png
+save_image $psname
+
+
+################## IR DROP #################
 analyze_power_grid -net VDD
 set dut irdropHeat_
 set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv

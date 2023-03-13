@@ -2,7 +2,7 @@
 # Uncomment or add the design to run
 # ==============================================================================
 
-# DESIGN_CONFIG=./designs/nangate45/aes/config.mk
+ DESIGN_CONFIG=./designs/nangate45/aes/config.mk
 # DESIGN_CONFIG=./designs/nangate45/ariane136/config.mk
 # DESIGN_CONFIG=./designs/nangate45/black_parrot/config.mk
 # DESIGN_CONFIG=./designs/nangate45/bp_be_top/config.mk
@@ -82,7 +82,7 @@
 # DESIGN_CONFIG=./designs/gf180/aes/config.mk
 #
 # Default design
-DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
+#DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
 
 # If we are running headless use offscreen rendering for save_image
 ifndef DISPLAY
