@@ -2,7 +2,9 @@
 # Uncomment or add the design to run
 # ==============================================================================
 
- DESIGN_CONFIG=./designs/nangate45/aes/config.mk
+DESIGN_CONFIG=./designs/nangate45/myc17/config.mk
+
+# DESIGN_CONFIG=./designs/nangate45/aes/config.mk
 # DESIGN_CONFIG=./designs/nangate45/ariane136/config.mk
 # DESIGN_CONFIG=./designs/nangate45/black_parrot/config.mk
 # DESIGN_CONFIG=./designs/nangate45/bp_be_top/config.mk
@@ -104,13 +106,8 @@ endif
 
 #-------------------------------------------------------------------------------
 # Proper way to initiate SHELL for make
-#<<<<<<< HEAD
-#SHELL          = /bin/bash
-#.SHELLFLAGS    = -o pipefail -c
-#=======
 SHELL          := /usr/bin/env bash
 .SHELLFLAGS    := -o pipefail -c
-#>>>>>>> upstream/master
 
 #-------------------------------------------------------------------------------
 # Setup variables to point to root / head of the OpenROAD directory
@@ -400,7 +397,7 @@ $(RESULTS_DIR)/1_1_yosys.v: $(DONT_USE_LIBS) $(WRAPPED_LIBS) $(DONT_USE_SC_LIB) 
 	($(TIME_CMD) $(YOSYS_CMD) $(YOSYS_FLAGS) -c $(SYNTH_SCRIPT)) 2>&1 | tee $(LOG_DIR)/1_1_yosys.log
 	
 getFeatures: 
-	($(TIME_CMD) $(YOSYS_CMD) $(YOSYS_FLAGS) -c $(MY_SCRIPT)) 2>&1 | tee $(LOG_DIR)/my.log
+	($(TIME_CMD) $(YOSYS_CMD) $(YOSYS_FLAGS) -c $(MY_SCRIPT)) 2>&1 | tee $(LOG_DIR)/getFeatures.log
 	
 $(RESULTS_DIR)/1_synth.v: $(RESULTS_DIR)/1_1_yosys.v
 	mkdir -p $(RESULTS_DIR) $(LOG_DIR) $(REPORTS_DIR)
@@ -788,11 +785,6 @@ RESULTS_OAS = $(notdir $(sort $(wildcard $(RESULTS_DIR)/*.oas)))
 $(foreach file,$(RESULTS_DEF) $(RESULTS_GDS) $(RESULTS_OAS),klayout_$(file)): klayout_%: $(OBJECTS_DIR)/klayout.lyt
 	$(KLAYOUT_CMD) -nn $(OBJECTS_DIR)/klayout.lyt $(RESULTS_DIR)/$*
 
-#<<<<<<< HEAD
-#gui_final: gui_6_final.def
-#$(foreach file,$(RESULTS_DEF),gui_$(file)): gui_%:
-#	DEF_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/gui.tcl
-#=======
 gui_floorplan: gui_2_floorplan.odb
 gui_place: gui_3_place.odb
 gui_cts: gui_4_cts.odb
@@ -804,6 +796,7 @@ $(foreach file,$(RESULTS_DEF),gui_$(file)): gui_%:
 
 $(foreach file,$(RESULTS_ODB),gui_$(file)): gui_%:
 	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/gui.tcl
+#	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
 
 # Write a def for the corresponding odb
 $(foreach file,$(RESULTS_ODB),$(file).def): %.def:
@@ -818,15 +811,15 @@ all_verilog : $(foreach file,$(RESULTS_ODB),$(file).v)
 
 handoff : all_defs all_verilog
 
-#>>>>>>> upstream/master
-print-%  : ; @echo $* = $($*)
+##>>>>>>> upstream/master
+#print-%  : ; @echo $* = $($*)
 
 
-gui_floorplan: gui_2_floorplan.odb
-gui_place: gui_3_place.odb
-gui_cts: gui_4_cts.odb
-gui_route: gui_5_route.odb
-#gui_final: gui_6_final.odb
+#gui_floorplan: gui_2_floorplan.odb
+#gui_place: gui_3_place.odb
+#gui_cts: gui_4_cts.odb
+#gui_route: gui_5_route.odb
+##gui_final: gui_6_final.odb
 my_gui: my_gui_6_final.odb
 
 $(foreach file,$(RESULTS_DEF),my_gui_$(file)): my_gui_%:
