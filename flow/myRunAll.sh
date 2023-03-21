@@ -12,6 +12,7 @@ while read line; do
   make DESIGN_CONFIG=$line #&& 
   make getFeatures DESIGN_CONFIG=$line #&& 
   make my_gui DESIGN_CONFIG=$line; 
+#  make gui_final DESIGN_CONFIG=$line; 
 done < congestionPrediction/designsToRun.txt 
 
 printf "\n\n>>>>Done with OpenROAD runs!\n\n"

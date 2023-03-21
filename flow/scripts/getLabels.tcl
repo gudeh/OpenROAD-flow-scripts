@@ -53,75 +53,72 @@ if {![info exist ::env(GUI_NO_TIMING)]} {
     estimate_parasitics -placement
   }
   
-## Cleanup temporary variables
-#  unset sdc_file s design_stage
-
+# Cleanup temporary variables
+  unset sdc_file s design_stage
+}
 
 ################################################################
 ################# My additions from gui.tcl #####################
 ################################################################
-set dirPath congestionPrediction/dataSet/${::env(DESIGN_NAME)}
-file mkdir $dirPath
+set designPath congestionPrediction/dataSet/${::env(DESIGN_NAME)}
+file mkdir $designPath
 
 #for printScreens of layouts
-set dirPath2 congestionPrediction/layoutPrints
-file mkdir $dirPath2
+set printsPath congestionPrediction/layoutPrints
+file mkdir $printsPath
 
 #moving yosys outpupt files (it doesnt have access to design names)
 file rename -force congestionPrediction/DGLedges.csv congestionPrediction/dataSet/${::env(DESIGN_NAME)}/DGLedges.csv
 file rename -force congestionPrediction/DGLcells.csv congestionPrediction/dataSet/${::env(DESIGN_NAME)}/DGLcells.csv
 
-#Write the position of each node
+################## GATES POSITIONS #################
 set dut gatesPosition_
-set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
-set myout [open $myname w]
-puts $myout "Name,xMin,yMin,xMax,yMax"
+set fileName ${designPath}/${dut}${::env(DESIGN_NAME)}.csv
+set outFile [open $fileName w]
+puts $outFile "Name,xMin,yMin,xMax,yMax"
 set block [ord::get_db_block]
 foreach inst [$block getInsts] { 
   set box [$inst getBBox] 
-  puts $myout "[$inst getName], [ord::dbu_to_microns [$box xMin]], [ord::dbu_to_microns [$box yMin]], [ord::dbu_to_microns [$box xMax]], [ord::dbu_to_microns [$box yMax]]" 
+  puts $outFile "[$inst getName], [ord::dbu_to_microns [$box xMin]], [ord::dbu_to_microns [$box yMin]], [ord::dbu_to_microns [$box xMax]], [ord::dbu_to_microns [$box yMax]]" 
 }
-close $myout
+close $outFile
 
 ################## PLACEMENT #################
 set dut placementHeat_
-set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
-gui::dump_heatmap Placement $myname
+set fileName ${designPath}/${dut}${::env(DESIGN_NAME)}.csv
+gui::dump_heatmap Placement $fileName
 
 #layout printscreen placement
 gui::set_display_controls "Heat Maps/Placement Density" visible true
-set psname ${dirPath2}/${dut}${::env(DESIGN_NAME)}.png
-save_image $psname
-
+set psName ${printsPath}/${dut}${::env(DESIGN_NAME)}.png
+save_image $psName
+puts "Placement done!\n"
 
 ################## POWER #################
 set dut powerHeat_
-set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
-gui::dump_heatmap Power $myname
-
+set fileName ${designPath}/${dut}${::env(DESIGN_NAME)}.csv
+gui::dump_heatmap Power $fileName
+puts "Power done!\n"
 
 ################## ROUTING #################
-read_guides $::env(RESULTS_DIR)/route.guide
+#read_guides $::env(RESULTS_DIR)/route.guide
 set dut routingHeat_
-set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
-gui::dump_heatmap Routing $myname
+set fileName ${designPath}/${dut}${::env(DESIGN_NAME)}.csv
+gui::dump_heatmap Routing $fileName
 
 #layout printscreen Routing
 gui::set_display_controls "Heat Maps/Routing Congestion" visible true
-set psname ${dirPath2}/${dut}${::env(DESIGN_NAME)}.png
-save_image $psname
-
+set psName ${printsPath}/${dut}${::env(DESIGN_NAME)}.png
+save_image $psName
+puts "Routing done!\n"
 
 ################## IR DROP #################
 analyze_power_grid -net VDD
 set dut irdropHeat_
-set myname ${dirPath}/${dut}${::env(DESIGN_NAME)}.csv
-gui::dump_heatmap IRDrop $myname
+set fileName ${designPath}/${dut}${::env(DESIGN_NAME)}.csv
+gui::dump_heatmap IRDrop $fileName
+puts "IR Drop done!\n"
 
-# Cleanup temporary variables
-unset sdc_file s design_stage
 
 puts "\nExit getLabels.tcl"
 exit
-
-}

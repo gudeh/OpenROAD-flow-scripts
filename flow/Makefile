@@ -790,6 +790,8 @@ gui_place: gui_3_place.odb
 gui_cts: gui_4_cts.odb
 gui_route: gui_5_route.odb
 gui_final: gui_6_final.odb
+#my_gui: my_gui_6_final.odb
+
 
 $(foreach file,$(RESULTS_DEF),gui_$(file)): gui_%:
 	DEF_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/gui.tcl
@@ -797,6 +799,16 @@ $(foreach file,$(RESULTS_DEF),gui_$(file)): gui_%:
 $(foreach file,$(RESULTS_ODB),gui_$(file)): gui_%:
 	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/gui.tcl
 #	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
+
+
+################################################################################
+#$(foreach file,$(RESULTS_DEF),gui_$(file)): gui_%:
+#	DEF_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
+
+#$(foreach file,$(RESULTS_ODB),gui_$(file)): gui_%:
+#	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
+################################################################################
+	
 
 # Write a def for the corresponding odb
 $(foreach file,$(RESULTS_ODB),$(file).def): %.def:
@@ -811,15 +823,12 @@ all_verilog : $(foreach file,$(RESULTS_ODB),$(file).v)
 
 handoff : all_defs all_verilog
 
-##>>>>>>> upstream/master
-#print-%  : ; @echo $* = $($*)
-
 
 #gui_floorplan: gui_2_floorplan.odb
 #gui_place: gui_3_place.odb
 #gui_cts: gui_4_cts.odb
 #gui_route: gui_5_route.odb
-##gui_final: gui_6_final.odb
+#gui_final: gui_6_final.odb
 my_gui: my_gui_6_final.odb
 
 $(foreach file,$(RESULTS_DEF),my_gui_$(file)): my_gui_%:
