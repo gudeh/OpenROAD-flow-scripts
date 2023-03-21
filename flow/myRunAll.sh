@@ -20,9 +20,9 @@ printf "\n\n>>>>Done with OpenROAD runs!\n\n"
 
 
 # wrapping up data provided by yosys and openroad for python input
-#command="./gateToHeat > congestionPrediction/gateToHeatCPP.log"
-#printf "\n######\n$command\n######\n\n"
-#eval $command
+command="./gateToHeat > congestionPrediction/gateToHeatCPP.log"
+printf "\n######\n$command\n######\n\n"
+eval $command
 
 
 
