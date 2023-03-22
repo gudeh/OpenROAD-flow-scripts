@@ -2,7 +2,7 @@
 # Uncomment or add the design to run
 # ==============================================================================
 
-DESIGN_CONFIG=./designs/nangate45/myc17/config.mk
+#DESIGN_CONFIG=./designs/nangate45/myc17/config.mk
 
 # DESIGN_CONFIG=./designs/nangate45/aes/config.mk
 # DESIGN_CONFIG=./designs/nangate45/ariane136/config.mk
