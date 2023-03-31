@@ -1,14 +1,7 @@
 #!/bin/bash
 
-#while read line; do 
-#  echo "-->myRunall.sh: cleaning $line" #&& 
-#  make clean_all DESIGN_CONFIG=$line; 
-#done < congestionPrediction/designsToRun.txt
-
-#make clean_all
-
-set doClean false
-set doRun false
+doClean=true
+doRun=true
 
 while read line; do 
 
