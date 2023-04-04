@@ -76,13 +76,13 @@ core.*
 
 *~
 
-<<<<<<< HEAD
+# Python bytecode
+__pycache__/
+
+dependencies/
+
 #my things
 flow/myStuff/*
 !flow/myStuff/regression.py
 !flow/myStuff/designsToRun.txt
 !flow/myStuff/gateToHeat.cpp
-=======
-# Python bytecode
-__pycache__/
->>>>>>> upstream/master
