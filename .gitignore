@@ -80,9 +80,3 @@ core.*
 __pycache__/
 
 dependencies/
-
-#my things
-flow/myStuff/*
-!flow/myStuff/regression.py
-!flow/myStuff/designsToRun.txt
-!flow/myStuff/gateToHeat.cpp
