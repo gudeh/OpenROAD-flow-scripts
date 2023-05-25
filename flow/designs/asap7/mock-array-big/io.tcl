@@ -1,37 +1,26 @@
-proc pin2 {fmt p q} {
-    set result [list]
-    for {set m 0} {$m < $p} {incr m} {
-        for {set n 0} {$n < $q} {incr n} {
-            lappend result [format $fmt $m $n]
-        }
-    }
-    return $result
-}
-
-set data_width [expr {[info exists ::env(MOCK_ARRAY_DATAWIDTH)] ? $::env(MOCK_ARRAY_DATAWIDTH) : 8}]
-set rows [expr {[info exists ::env(MOCK_ARRAY_HEIGHT)] ? $::env(MOCK_ARRAY_HEIGHT) : 8}]
-set cols [expr {[info exists ::env(MOCK_ARRAY_WIDTH)] ? $::env(MOCK_ARRAY_WIDTH) : 8}]
+source designs/asap7/mock-array-big/util.tcl
 
 set assignments [list \
     top \
     [ concat \
-        {*}[pin2 {io_insHorizontal_1_%d[%d]} $cols $data_width] \
-        {*}[pin2 {io_outsHorizontal_1_%d[%d]} $cols $data_width] \
+        {*}[match_pins io_insDown_.*] \
+        {*}[match_pins io_outsUp_.*] \
     ] \
     bottom \
     [ concat \
-        {*}[pin2 {io_insHorizontal_0_%d[%d]} $cols $data_width] \
-        {*}[pin2 {io_outsHorizontal_0_%d[%d]} $cols $data_width] \
+        {*}[match_pins io_insUp_.*] \
+        {*}[match_pins io_outsDown_.*] \
     ] \
     left \
     [ concat \
-        {*}[pin2 {io_insVertical_1_%d[%d]} $rows $data_width] \
-        {*}[pin2 {io_outsVertical_1_%d[%d]} $rows $data_width] \
+        {*}[match_pins io_insRight_.*] \
+        {*}[match_pins io_outsLeft_.*] \
     ] \
     right \
     [ concat \
-        {*}[pin2 {io_insVertical_0_%d[%d]} $rows $data_width] \
-        {*}[pin2 {io_outsVertical_0_%d[%d]} $rows $data_width] \
+        {*}[match_pins io_insLeft_.*] \
+        {*}[match_pins io_outsRight_.*] \
+        {*}[match_pins io_lsbs_.*] \
     ] \
 ]
 

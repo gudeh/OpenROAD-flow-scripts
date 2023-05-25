@@ -1,83 +1,49 @@
 module Element(
   input        clock,
-  input  [7:0] io_ins_0,
-  input  [7:0] io_ins_1,
-  input  [7:0] io_ins_2,
-  input  [7:0] io_ins_3,
-  output [7:0] io_outs_0,
-  output [7:0] io_outs_1,
-  output [7:0] io_outs_2,
-  output [7:0] io_outs_3
+  input  [7:0] io_ins_down,
+  input  [7:0] io_ins_right,
+  input  [7:0] io_ins_up,
+  input  [7:0] io_ins_left,
+  output [7:0] io_outs_down,
+  output [7:0] io_outs_right,
+  output [7:0] io_outs_up,
+  output [7:0] io_outs_left,
+  input        io_lsbIns_1,
+  input        io_lsbIns_2,
+  input        io_lsbIns_3,
+  input        io_lsbIns_4,
+  input        io_lsbIns_5,
+  input        io_lsbIns_6,
+  input        io_lsbIns_7,
+  output       io_lsbOuts_0,
+  output       io_lsbOuts_1,
+  output       io_lsbOuts_2,
+  output       io_lsbOuts_3,
+  output       io_lsbOuts_4,
+  output       io_lsbOuts_5,
+  output       io_lsbOuts_6,
+  output       io_lsbOuts_7
 );
-`ifdef RANDOMIZE_REG_INIT
-  reg [31:0] _RAND_0;
-  reg [31:0] _RAND_1;
-  reg [31:0] _RAND_2;
-  reg [31:0] _RAND_3;
-`endif // RANDOMIZE_REG_INIT
-  reg [7:0] REG; // @[MockArray.scala 33:42]
-  reg [7:0] REG_1; // @[MockArray.scala 33:42]
-  reg [7:0] REG_2; // @[MockArray.scala 33:42]
-  reg [7:0] REG_3; // @[MockArray.scala 33:42]
-  assign io_outs_0 = REG; // @[MockArray.scala 33:13]
-  assign io_outs_1 = REG_1; // @[MockArray.scala 33:13]
-  assign io_outs_2 = REG_2; // @[MockArray.scala 33:13]
-  assign io_outs_3 = REG_3; // @[MockArray.scala 33:13]
+  reg [7:0] REG;
+  reg [7:0] REG_1;
+  reg [7:0] REG_2;
+  reg [7:0] REG_3;
+  assign io_outs_down = REG_3;
+  assign io_outs_right = REG_2;
+  assign io_outs_up = REG_1;
+  assign io_outs_left = REG;
+  assign io_lsbOuts_0 = io_lsbIns_1;
+  assign io_lsbOuts_1 = io_lsbIns_2;
+  assign io_lsbOuts_2 = io_lsbIns_3;
+  assign io_lsbOuts_3 = io_lsbIns_4;
+  assign io_lsbOuts_4 = io_lsbIns_5;
+  assign io_lsbOuts_5 = io_lsbIns_6;
+  assign io_lsbOuts_6 = io_lsbIns_7;
+  assign io_lsbOuts_7 = io_outs_left[0];
   always @(posedge clock) begin
-    REG <= io_ins_3; // @[MockArray.scala 33:42]
-    REG_1 <= io_ins_2; // @[MockArray.scala 33:42]
-    REG_2 <= io_ins_1; // @[MockArray.scala 33:42]
-    REG_3 <= io_ins_0; // @[MockArray.scala 33:42]
+    REG <= io_ins_down;
+    REG_1 <= io_ins_right;
+    REG_2 <= io_ins_up;
+    REG_3 <= io_ins_left;
   end
-// Register and memory initialization
-`ifdef RANDOMIZE_GARBAGE_ASSIGN
-`define RANDOMIZE
-`endif
-`ifdef RANDOMIZE_INVALID_ASSIGN
-`define RANDOMIZE
-`endif
-`ifdef RANDOMIZE_REG_INIT
-`define RANDOMIZE
-`endif
-`ifdef RANDOMIZE_MEM_INIT
-`define RANDOMIZE
-`endif
-`ifndef RANDOM
-`define RANDOM $random
-`endif
-`ifdef RANDOMIZE_MEM_INIT
-  integer initvar;
-`endif
-`ifndef SYNTHESIS
-`ifdef FIRRTL_BEFORE_INITIAL
-`FIRRTL_BEFORE_INITIAL
-`endif
-initial begin
-  `ifdef RANDOMIZE
-    `ifdef INIT_RANDOM
-      `INIT_RANDOM
-    `endif
-    `ifndef VERILATOR
-      `ifdef RANDOMIZE_DELAY
-        #`RANDOMIZE_DELAY begin end
-      `else
-        #0.002 begin end
-      `endif
-    `endif
-`ifdef RANDOMIZE_REG_INIT
-  _RAND_0 = {1{`RANDOM}};
-  REG = _RAND_0[7:0];
-  _RAND_1 = {1{`RANDOM}};
-  REG_1 = _RAND_1[7:0];
-  _RAND_2 = {1{`RANDOM}};
-  REG_2 = _RAND_2[7:0];
-  _RAND_3 = {1{`RANDOM}};
-  REG_3 = _RAND_3[7:0];
-`endif // RANDOMIZE_REG_INIT
-  `endif // RANDOMIZE
-end // initial
-`ifdef FIRRTL_AFTER_INITIAL
-`FIRRTL_AFTER_INITIAL
-`endif
-`endif // SYNTHESIS
 endmodule

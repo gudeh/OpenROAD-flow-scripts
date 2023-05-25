@@ -57,7 +57,7 @@ export CLKGATE_MAP_FILE        = $(PLATFORM_DIR)/yoSys/cells_clkgate_R.v
 export ADDER_MAP_FILE         ?= $(PLATFORM_DIR)/yoSys/cells_adders_R.v
 
 # Set yosys-abc clock period to first "clk_period" value or "-period" value found in sdc file
-export ABC_CLOCK_PERIOD_IN_PS ?= $(shell sed -nr "s/^set\s+clk_period\s+(\S+).*|.*-period\s+(\S+).*/\1\2/p" $(SDC_FILE) | head -1 | awk '{print $$1}')
+export ABC_CLOCK_PERIOD_IN_PS ?= $(shell sed -nE "s/^set\s+clk_period\s+(\S+).*|.*-period\s+(\S+).*/\1\2/p" $(SDC_FILE) | head -1 | awk '{print $$1}')
 export ABC_DRIVER_CELL         = BUFx2_ASAP7_75t_R
 
 # BUF_X1, pin (A) = 0.974659. Arbitrarily multiply by 4
@@ -81,8 +81,8 @@ export MAKE_TRACKS             = $(PLATFORM_DIR)/openRoad/make_tracks.tcl
 export PDN_TCL ?= $(PLATFORM_DIR)/openRoad/pdn/grid_strategy-M1-M2-M5-M6.tcl
 
 # IO Placer pin layers
-export IO_PLACER_H             = M4
-export IO_PLACER_V             = M5
+export IO_PLACER_H             ?= M4
+export IO_PLACER_V             ?= M5
 
 export MACRO_PLACE_HALO ?= 10 10
 export MACRO_PLACE_CHANNEL ?= 12 12
@@ -115,9 +115,9 @@ export TAP_CELL_NAME           = TAPCELL_ASAP7_75t_R
 export SET_RC_TCL              = $(PLATFORM_DIR)/setRC.tcl
 
 # Route options
-export MIN_ROUTING_LAYER       = M2
+export MIN_ROUTING_LAYER       ?= M2
 #export MIN_CLOCK_ROUTING_LAYER = M4
-export MAX_ROUTING_LAYER       = M7
+export MAX_ROUTING_LAYER       ?= M7
 
 # KLayout technology file
 export KLAYOUT_TECH_FILE       = $(PLATFORM_DIR)/KLayout/asap7.lyt
