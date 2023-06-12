@@ -15,8 +15,12 @@ export VERILOG_FILES = ./designs/src/$(DESIGN_NAME)/pickled.v \
                        ./designs/$(PLATFORM)/$(DESIGN_NAME)/macros.v
 export SDC_FILE      = ./designs/$(PLATFORM)/$(DESIGN_NAME)/constraint.sdc
 
-export ADDITIONAL_LEFS = $(sort $(wildcard ./designs/$(PLATFORM)/$(DESIGN_NAME)/*.lef))
-export ADDITIONAL_LIBS = $(sort $(wildcard ./designs/$(PLATFORM)/$(DESIGN_NAME)/*.lib))
+export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram45_512x64.lef \
+                         $(PLATFORM_DIR)/lef/fakeram45_64x15.lef \
+                         $(PLATFORM_DIR)/lef/fakeram45_64x96.lef
+export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/fakeram45_512x64.lib \
+                         $(PLATFORM_DIR)/lib/fakeram45_64x15.lib \
+                         $(PLATFORM_DIR)/lib/fakeram45_64x96.lib
 
 export DIE_AREA    = 0 0 800 700 
 export CORE_AREA   = 10.07 11.2 790 690 
@@ -27,3 +31,4 @@ export MACRO_PLACE_HALO = 10 10
 export MACRO_PLACE_CHANNEL = 20 20
 
 export PLACE_DENSITY_LB_ADDON = 0.10
+export TNS_END_PERCENT        = 100

@@ -10,7 +10,13 @@ else
 fi
 
 # package versions
-klayoutVersion=0.27.10
+klayoutVersion=0.28.8
+
+_versionCompare() {
+    local a b IFS=. ; set -f
+    printf -v a %08d $1; printf -v b %08d $3
+    test $a "$2" $b
+}
 
 _installORDependencies() {
     ./tools/OpenROAD/etc/DependencyInstaller.sh ${OR_INSTALLER_ARGS}
@@ -39,7 +45,18 @@ _installCentosPackages() {
         ruby-devel \
         tcl-devel
 
-    yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-${klayoutVersion}-0.x86_64.rpm
+    if ! [ -x "$(command -v klayout)" ]; then
+      yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-${klayoutVersion}-0.x86_64.rpm
+    else
+      currentVersion=$(klayout -v | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
+      if _versionCompare $currentVersion -ge $klayoutVersion; then
+        echo "KLayout version greater than or equal to ${klayoutVersion}"
+      else
+        echo "KLayout version less than ${klayoutVersion}"
+        sudo yum remove -y klayout
+        yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-${klayoutVersion}-0.x86_64.rpm
+      fi 
+    fi
 }
 
 _installUbuntuCleanUp() {
@@ -74,9 +91,9 @@ _installUbuntuPackages() {
 
     # install KLayout
     if [[ $1 == 20.04 ]]; then
-        klayoutChecksum=8076dadfb1b790b75d284fdc9c90f70b
+        klayoutChecksum=15a26f74cf396d8a10b7985ed70ab135
     else
-        klayoutChecksum=2fb355f0e19d69be8535722185f983cc
+        klayoutChecksum=db751264399706a23d20455bb7624264
     fi
     wget https://www.klayout.org/downloads/Ubuntu-${1%.*}/klayout_${klayoutVersion}-1_amd64.deb
     md5sum -c <(echo "${klayoutChecksum} klayout_${klayoutVersion}-1_amd64.deb") || exit 1
