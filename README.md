@@ -1,12 +1,16 @@
 # gudeh's editions and reminder
 Prooblem: when trying to set my Yosys fork as a submodule of my own ORFS, it fails to compile ABC. Even when using the same hash version of ABC for compilation. The error seems to be the addition of a "-fpermissive" option for compilation of ABC.
 Manual solution:
+
   -To turn around this issue we have to edit "build_openroad.sh" so it does not compile Yosys, by commenting the line with "**make install**" of Yosys.
+  
   -Also, in "flow/Makefile", we need to make sure to use the system Yosys, and not the absolute path, by using the command: "**YOSYS_CMD               ?= $(shell command -v yosys)**"
 
-## Be careful to not commit and push this editions on "build_openroad.sh" and "flow/Makefile"!!!!
+### Be careful to not commit and push this editions on "build_openroad.sh" and "flow/Makefile"!!!!
 To push modifications while restoring ORFS default: 
+
   -**git checkout upstream/main -- build_openroad.sh**. This will discard local modifications and use upstream's build_openroad.sh file.
+  
   -**flow/Makefile**: Manually remove the added YOSYS_CMD line and put back the original with absolute path.
 
 # OpenROAD Flow
