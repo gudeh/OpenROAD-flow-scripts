@@ -18,21 +18,30 @@ if {[info exist ::env(CTS_CLUSTER_DIAMETER)]} {
   set cluster_diameter 100
 }
 
-if {[info exist ::env(CTS_BUF_DISTANCE)]} {
-clock_tree_synthesis -root_buf "$::env(CTS_BUF_CELL)" -buf_list "$::env(CTS_BUF_CELL)" \
-                     -sink_clustering_enable \
-                     -sink_clustering_size $cluster_size \
-                     -sink_clustering_max_diameter $cluster_diameter \
-                     -distance_between_buffers "$::env(CTS_BUF_DISTANCE)" \
-                     -balance_levels
-} else {
-clock_tree_synthesis -root_buf "$::env(CTS_BUF_CELL)" -buf_list "$::env(CTS_BUF_CELL)" \
-                     -sink_clustering_enable \
-                     -sink_clustering_size $cluster_size \
-                     -sink_clustering_max_diameter $cluster_diameter \
-                     -balance_levels
+proc save_progress {stage} {
+  puts "Run 'make gui_$stage.odb' to load progress snapshot"
+  write_db $::env(RESULTS_DIR)/$stage.odb
+  write_sdc $::env(RESULTS_DIR)/$stage.sdc
 }
 
+if {[info exist ::env(CTS_BUF_DISTANCE)]} {
+  clock_tree_synthesis -root_buf "$::env(CTS_BUF_CELL)" -buf_list "$::env(CTS_BUF_CELL)" \
+                      -sink_clustering_enable \
+                      -sink_clustering_size $cluster_size \
+                      -sink_clustering_max_diameter $cluster_diameter \
+                      -distance_between_buffers "$::env(CTS_BUF_DISTANCE)" \
+                      -balance_levels
+} else {
+  clock_tree_synthesis -root_buf "$::env(CTS_BUF_CELL)" -buf_list "$::env(CTS_BUF_CELL)" \
+                      -sink_clustering_enable \
+                      -sink_clustering_size $cluster_size \
+                      -sink_clustering_max_diameter $cluster_diameter \
+                      -balance_levels
+}
+
+if {[info exist ::env(CTS_SNAPSHOTS)]} {
+  save_progress 4_1_pre_repair_clock_nets
+}
 
 set_propagated_clock [all_clocks]
 
@@ -59,6 +68,10 @@ detailed_placement
 
 estimate_parasitics -placement
 
+if {[info exist ::env(CTS_SNAPSHOTS)]} {
+  save_progress 4_1_pre_repair_hold_setup
+}
+
 puts "Repair setup and hold violations..."
 
 # process user settings
@@ -80,14 +93,29 @@ if { [info exists ::env(SKIP_PIN_SWAP)] } {
   append additional_args " -skip_pin_swap"
 }
 
-if { [info exists ::env(ENABLE_GATE_CLONING)] } {
-  puts "Enable gate cloning during optimization"
-  append additional_args " -enable_gate_cloning"
+if { [info exists ::env(SKIP_GATE_CLONING)] } {
+  puts "Skipping gate cloning during optimization"
+  append additional_args " -skip_gate_cloning"
+}
+
+
+if { [info exists ::env(EQUIVALENCE_CHECK)] } {
+    write_eqy_verilog 4_before_rsz.v
 }
 
 repair_timing {*}$additional_args
 
-detailed_placement
+if { [info exists ::env(EQUIVALENCE_CHECK)] } {
+    run_equivalence_test
+}
+
+set result [catch {detailed_placement} msg]
+if {$result != 0} {
+  save_progress 4_1_error
+  puts "Detailed placement failed in CTS: $msg"
+  return -code $result
+}
+
 check_placement -verbose
 
 report_metrics "cts final"

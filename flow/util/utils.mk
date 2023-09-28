@@ -1,38 +1,38 @@
 # Utilities
 #===============================================================================
 .PHONY: metadata
-metadata: $(REPORTS_DIR)/metadata-$(FLOW_VARIANT)-check.log
+metadata: finish
+	@echo $(DESIGN_DIR) > $(REPORTS_DIR)/design-dir.txt
+	@$(UTILS_DIR)/genMetrics.py -d $(DESIGN_NICKNAME) \
+		-p $(PLATFORM) \
+		-v $(FLOW_VARIANT) \
+		-o $(REPORTS_DIR)/metadata-$(FLOW_VARIANT).json 2>&1 \
+		| tee $(REPORTS_DIR)/gen-metrics-$(FLOW_VARIANT)-check.log
+	@$(UTILS_DIR)/checkMetadata.py \
+		-m $(REPORTS_DIR)/metadata-$(FLOW_VARIANT).json \
+		-r $(dir $(DESIGN_CONFIG))rules-$(FLOW_VARIANT).json 2>&1 \
+		| tee $(REPORTS_DIR)/metadata-$(FLOW_VARIANT)-check.log
 
 .PHONY: clean_metadata
 clean_metadata:
 	rm -f $(REPORTS_DIR)/metadata-$(FLOW_VARIANT)-check.log
 	rm -f $(REPORTS_DIR)/metadata-$(FLOW_VARIANT).json
 
-.PHONY: update_metadata update_rules update_ok
+.PHONY: update_ok
 update_ok: update_metadata update_rules
 
-update_metadata: $(REPORTS_DIR)/metadata-$(FLOW_VARIANT).json
+.PHONY: update_metadata
+update_metadata:
 	cp -f $(REPORTS_DIR)/metadata-$(FLOW_VARIANT).json \
 	      $(DESIGN_DIR)/metadata-$(FLOW_VARIANT)-ok.json
 
+.PHONY: update_rules
 update_rules:
-	$(UTILS_DIR)/genRuleFile.py $(DESIGN_DIR) --variant $(FLOW_VARIANT) --failing --tighten
+	$(UTILS_DIR)/genRuleFile.py $(DESIGN_DIR) --variant $(FLOW_VARIANT) --failing
 
 .PHONY: update_rules_force
 update_rules_force:
 	$(UTILS_DIR)/genRuleFile.py $(DESIGN_DIR) --variant $(FLOW_VARIANT) --update
-
-$(REPORTS_DIR)/metadata-$(FLOW_VARIANT).json:
-	echo $(DESIGN_DIR) > $(REPORTS_DIR)/design-dir.txt
-	$(UTILS_DIR)/genMetrics.py -d $(DESIGN_NICKNAME) \
-		-p $(PLATFORM) \
-		-v $(FLOW_VARIANT) \
-		-o $@ 2>&1 | tee $(REPORTS_DIR)/gen-metrics-$(FLOW_VARIANT)-check.log
-
-RULES_DESIGN = $(dir $(DESIGN_CONFIG))rules-$(FLOW_VARIANT).json
-
-$(REPORTS_DIR)/metadata-$(FLOW_VARIANT)-check.log: $(REPORTS_DIR)/metadata-$(FLOW_VARIANT).json
-	$(UTILS_DIR)/checkMetadata.py -m $< -r $(RULES_DESIGN) 2>&1 | tee $@
 
 #-------------------------------------------------------------------------------
 
@@ -85,16 +85,22 @@ define \n
 
 endef
 
-export ISSUE_VARIABLES := $(foreach V, $(.VARIABLES),$(if $(filter-out environment% default automatic, $(origin $V)), $(if $(filter-out .% %QT_QPA_PLATFORM% %TIME_CMD% KLAYOUT% GENERATE_ABSTRACT_RULE%, $(V)),$V=$($V))${\n}))
+define get_variables
+$(foreach V, $(.VARIABLES),$(if $(filter-out $(1), $(origin $V)), $(if $(filter-out .% %QT_QPA_PLATFORM% %TIME_CMD% KLAYOUT% GENERATE_ABSTRACT_RULE% do-step% do-copy% OPEN_GUI% OPEN_GUI_SHORTCUT%, $(V)), $V$ )))
+endef
+
+export UNSET_VARIABLES_NAMES := $(call get_variables,command% line environment% default automatic)
+export ISSUE_VARIABLES_NAMES := $(call get_variables,environment% default automatic)
+export ISSUE_VARIABLES := $(foreach V, $(ISSUE_VARIABLES_NAMES), $(if $($V),$V=$($V),$V='')${\n})
 
 $(foreach script,$(ISSUE_SCRIPTS),$(script)_issue): %_issue : versions.txt
 	$(UTILS_DIR)/makeIssue.sh $*
 
 .PHONY: clean_issues
 clean_issues:
-	rm -rf $(foreach issue, $(ISSUE_SCRIPTS), $(issue)_*.tar.gz)
-	rm -rf $(VARS_BASENAME).sh $(RUN_ME_SCRIPT)
- 
+	rm -f $(foreach issue, $(ISSUE_SCRIPTS), $(issue)_*.tar.gz)
+	rm -f vars*.sh vars*.tcl vars*.gdb run-me*.sh
+
 $(RESULTS_DIR)/6_final_only_clk.def: $(RESULTS_DIR)/6_final.def
 	$(TIME_CMD) $(OPENROAD_CMD) $(SCRIPTS_DIR)/deleteNonClkNets.tcl
 
@@ -120,12 +126,12 @@ command:
 
 ## Provide easy access to debugging
 ifdef GDB
-OPENROAD_EXE := gdb --args $(OPENROAD_EXE)
+export OPENROAD_EXE := gdb --args $(OPENROAD_EXE)
 endif
 
 ## Provide easy way to run valgrind
 ifdef VALGRIND
-OPENROAD_EXE := valgrind $(VALGRIND_ARGS) $(OPENROAD_EXE)
+export OPENROAD_EXE := valgrind $(VALGRIND_ARGS) $(OPENROAD_EXE)
 endif
 
 ## Convert RVE DRC database to JSON

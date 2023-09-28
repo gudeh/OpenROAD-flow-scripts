@@ -30,15 +30,19 @@ pipeline {
             name 'TEST_SLUG';
             values "docker build",
                    "aes asap7",
+                   "aes_lvt asap7",
                    "ethmac asap7",
+                   "ethmac_lvt asap7",
                    "gcd asap7",
                    "ibex asap7",
                    "jpeg asap7",
+                   "jpeg_lvt asap7",
                    "riscv32i asap7",
-                   "sha3 asap7",
                    "uart asap7",
-                   "uart-blocks asap7",
                    "mock-array asap7",
+                   "mock-alu asap7",
+                   "aes-block asap7",
+                   "sram-64x16 asap7",
                    "aes nangate45",
                    "bp_be_top nangate45",
                    "bp_fe_top nangate45",
@@ -64,7 +68,9 @@ pipeline {
                    "riscv32i sky130hs",
                    "aes gf180",
                    "ibex gf180",
-                   "jpeg gf180";
+                   "jpeg gf180",
+                   "riscv32i gf180",
+                   "uart-blocks gf180";
           }
         }
 
@@ -100,8 +106,8 @@ pipeline {
             post {
               always {
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                  archiveArtifacts artifacts: "flow/*tar.gz", allowEmptyArchive: true;
-                  archiveArtifacts artifacts: "flow/logs/**/*, flow/reports/**/*", allowEmptyArchive: true;
+                  archiveArtifacts artifacts: "flow/*tar.gz", allowEmptyArchive: true, excludes: "**/4_eqy_output/**";
+                  archiveArtifacts artifacts: "flow/logs/**/*, flow/reports/**/*", allowEmptyArchive: true, excludes: "**/4_eqy_output/**";
                 }
               }
             }
@@ -123,6 +129,7 @@ pipeline {
       post {
         always {
           archiveArtifacts artifacts: "flow/reports/report-summary.log";
+          archiveArtifacts artifacts: "flow/reports/**/report*.log";
         }
       }
     }
@@ -136,11 +143,6 @@ pipeline {
     stage("Report Full") {
       steps {
         sh "flow/util/genReport.py -vvvv";
-      }
-      post {
-        always {
-          archiveArtifacts artifacts: "flow/reports/**/report*.log";
-        }
       }
     }
 
@@ -167,6 +169,7 @@ pipeline {
               --buildID ${env.BUILD_ID} \
               --branchName ${env.BRANCH_NAME} \
               --commitSHA ${env.GIT_COMMIT} \
+              --jenkinsURL ${env.RUN_DISPLAY_URL} \
               --pipelineID ${env.BUILD_TAG} \
             """ + '--cred ${db_cred}'
         }

@@ -39,24 +39,58 @@ OpenROAD Flow is a full RTL-to-GDS flow built entirely on open-source tools.
 The project aims for automated, no-human-in-the-loop digital circuit design
 with 24-hour turnaround time.
 
+```{tip}
+See these [tips](user/FAQS.md#how-do-i-get-better-search-results) to help improve your search results.
+```
+
 ### Setup
+
+#### Supported Operating Systems
+
+Note that depending on the installation method, we have varying levels of 
+support for various operating systems. 
+
+Legend:
+- `Y` for supported.
+- `-` for unsupported.
+
+| Operating System | Local Installation | Prebuilt Binaries | Docker Installation | Windows Subsystem for Linux | 
+| --- | --- | --- | --- | --- |
+| Ubuntu 20.04 | `Y` | `Y` | `Y` | `-` |  
+| Ubuntu 22.04 | `Y` | `Y` | `Y` | `-` |
+| CentOS 7     | `Y` | `-` | `Y` | `-` |
+| CentOS 8     | `Y` | `-` | `Y` | `-` |
+| Debian 10    | `Y` | `Y` | `Y` | `-` |
+| Debian 11    | `Y` | `Y` | `Y` | `-` |
+| RHEL         | `Y` | `-` | `Y` | `-` |
+| Windows 10 and above | `-` | `-` | `Y` | `Y` |
+| macOS        | `Y*` | `-` | `Y` | `-` |
+
+```{warning}
+For macOS, local compilation for the modules `par` and `mpl2` are not
+fully supported due to an upstream issue with `or-tools`. We recommend
+Docker installation wherever possible.
+```
 
 #### System Requirements
 
 To build the binaries and run `gcd` through the flow:
 
 - Minimum: 1 CPU core and 8GB RAM.
-- Recommend: 4 CPU cores and 16GB of RAM.
+- Recommended: 4 CPU cores and 16GB of RAM.
 
-> **Note** `gcd` is a small design, and thus requires less computational power.
-> Larger designs may require better hardware.
+```{note}
+`gcd` is a small design, and thus requires less computational power.
+Larger designs may require better hardware.
 
+```
 #### Build or Installing ORFS Dependencies
 
-We support three major ways of installation:
+We support four major ways of installation:
 
 - [Docker](./user/BuildWithDocker.md)
 - [Pre-built Binaries](./user/BuildWithPrebuilt.md)
+- [Windows Subsystem for Linux (WSL)](./user/BuildWithWSL.md)
 - [Local Installation](./user/BuildLocally.md)
 
 You may also choose use the build script to customise your build process.
@@ -127,7 +161,10 @@ flows. The two main functionalities that AutoTuner provides are:
 - Automatic hyperparameter tuning framework for OpenROAD-flow-scripts
 - Parametric sweeping experiments for OpenROAD-flow-scripts
 
-> **Tip**: Refer to the detailed [instructions here](./user/InstructionsForAutoTuner.md) for AutoTuner.
+```{tip}
+Refer to the detailed [instructions here](./user/InstructionsForAutoTuner.md) for AutoTuner.
+
+```
 
 ### Adding a Design
 
@@ -145,7 +182,7 @@ These platforms have a permissive license which allows us to
 redistribute the PDK and OpenROAD platform-specific files. The platform
 files and license(s) are located in `platforms/{platform}`.
 
-OpenROAD-flow-scripts also supports the following commercial platforms:
+OpenROAD-flow-scripts also supports the following proprietary platforms:
 
 - GF12
 - TSMC65LP
@@ -178,8 +215,9 @@ at `flow/results/{platform}/{design_name}/6_final.gds`
 1. Drop your Verilog files into `designs/src/harness`
 2. Start the workflow:
 
-> **TIP!**
-> Start with a very small submodule in your design that has only a few pins.
+```{tip}
+Start with a very small submodule in your design that has only a few pins.
+```
 
 ```shell
 make DESIGN_NAME=TopLevelName DESIGN_CONFIG=$(pwd)/designs/harness.mk

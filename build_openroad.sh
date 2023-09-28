@@ -251,8 +251,8 @@ __docker_build()
                 cp .dockerignore{,.bak}
                 sed -i '/flow\/platforms/d' .dockerignore
         fi
-        ./etc/DockerHelper.sh create -target=dev -os="${DOCKER_OS_NAME}"
-        ./etc/DockerHelper.sh create -target=builder -os="${DOCKER_OS_NAME}"
+        ./etc/DockerHelper.sh create -target=dev -os="${DOCKER_OS_NAME}" -threads="${PROC}"
+        ./etc/DockerHelper.sh create -target=builder -os="${DOCKER_OS_NAME}" -threads="${PROC}"
         if [ ! -z "${DOCKER_COPY_PLATFORMS+x}" ]; then
                 mv .dockerignore{.bak,}
         fi
@@ -264,7 +264,11 @@ __local_build()
           export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$(brew --prefix tcl-tk)/bin:$PATH"
           export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
         fi
-
+        if [[ -f "/opt/rh/rh-python38/enable" ]]; then
+            set +u
+            source /opt/rh/rh-python38/enable
+            set -u
+        fi
         if [[ -f "/opt/rh/devtoolset-8/enable" ]]; then
             # the scl script has unbound variables
             set +u
@@ -358,13 +362,18 @@ __cleanup()
         fi
         echo "[INFO FLW-0026] Cleaning up previous binaries and build files."
         git clean ${CLEAN_CMD} tools
+        YOSYS_ABC_PATH="tools/yosys/abc"
+        if [[ -d "${YOSYS_ABC_PATH}" ]]; then
+                echo "Entering '${YOSYS_ABC_PATH}'"
+                git --work-tree=${YOSYS_ABC_PATH} --git-dir=${YOSYS_ABC_PATH}/.git clean ${CLEAN_CMD}
+        fi
         git submodule foreach --recursive git clean ${CLEAN_CMD}
 }
 
+__logging
 if [ ! -z "${CLEAN_BEFORE+x}" ]; then
         __cleanup
 fi
-__logging
 __args_setup
 __common_setup
 
