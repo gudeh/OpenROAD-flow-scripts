@@ -98,7 +98,7 @@
 # DESIGN_CONFIG=./designs/gf180/uart-blocks/config.mk
 #
 # Default design
-#DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
+ DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
 
 # Default TNS_END_PERCENT value
 export TNS_END_PERCENT ?=5
@@ -446,7 +446,6 @@ do-synth-report:
 # Run Synthesis using yosys
 #-------------------------------------------------------------------------------
 SYNTH_SCRIPT ?= $(SCRIPTS_DIR)/synth.tcl
-MY_SCRIPT ?= $(SCRIPTS_DIR)/getFeatures.tcl
 
 $(SYNTH_STOP_MODULE_SCRIPT):
 	mkdir -p $(RESULTS_DIR) $(LOG_DIR) $(REPORTS_DIR)
@@ -968,22 +967,7 @@ RESULTS_OAS = $(notdir $(sort $(wildcard $(RESULTS_DIR)/*.oas)))
 $(foreach file,$(RESULTS_DEF) $(RESULTS_GDS) $(RESULTS_OAS),klayout_$(file)): klayout_%: $(OBJECTS_DIR)/klayout.lyt
 	$(KLAYOUT_CMD) -nn $(OBJECTS_DIR)/klayout.lyt $(RESULTS_DIR)/$*
 
-<<<<<<< HEAD
-.PHONY: gui_floorplan
-gui_floorplan: gui_2_floorplan.odb
-.PHONY: gui_place
-gui_place: gui_3_place.odb
-.PHONY: gui_cts
-gui_cts: gui_4_cts.odb
-.PHONY: gui_route
-gui_route: gui_5_route.odb
-.PHONY: gui_final
-gui_final: gui_6_final.odb
-#my_gui: my_gui_6_final.odb
-
-=======
 .PHONY: preview_macro_placement
->>>>>>> upstream/master
 
 ifneq ($(or $(MACRO_PLACEMENT),$(MACRO_PLACEMENT_TCL)),)
 MACRO_PREVIEW_ODB = 2_floorplan_debug_macros.odb
@@ -991,22 +975,6 @@ else
 MACRO_PREVIEW_ODB = 2_4_floorplan_macro.odb
 endif
 
-<<<<<<< HEAD
-.PHONY: $(foreach file,$(RESULTS_ODB),gui_$(file))
-$(foreach file,$(RESULTS_ODB),gui_$(file)): gui_%:
-	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/gui.tcl
-#	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
-
-
-################################################################################
-#$(foreach file,$(RESULTS_DEF),gui_$(file)): gui_%:
-#	DEF_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
-
-#$(foreach file,$(RESULTS_ODB),gui_$(file)): gui_%:
-#	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
-################################################################################
-	
-=======
 preview_macro_placement:
 	@$(UNSET_AND_MAKE) $(RESULTS_DIR)/$(MACRO_PREVIEW_ODB)
 	@$(UNSET_AND_MAKE) gui_$(MACRO_PREVIEW_ODB)
@@ -1040,7 +1008,6 @@ $(foreach file,$(RESULTS_DEF),$(eval $(call OPEN_GUI,gui,$(file),DEF_FILE,$(OPEN
 $(foreach file,$(RESULTS_ODB),$(eval $(call OPEN_GUI,gui,$(file),ODB_FILE,$(OPENROAD_GUI_CMD))))
 $(foreach file,$(RESULTS_DEF),$(eval $(call OPEN_GUI,open,$(file),DEF_FILE,$(OPENROAD_NO_EXIT_CMD))))
 $(foreach file,$(RESULTS_ODB),$(eval $(call OPEN_GUI,open,$(file),ODB_FILE,$(OPENROAD_NO_EXIT_CMD))))
->>>>>>> upstream/master
 
 # Write a def for the corresponding odb
 $(foreach file,$(RESULTS_ODB),$(file).def): %.def:
@@ -1087,8 +1054,11 @@ include $(UTILS_DIR)/utils.mk
 export PRIVATE_DIR ?= ../../private_tool_scripts
 -include $(PRIVATE_DIR)/private.mk
 
+MY_YOSYS_CMD ?= $(abspath /home/gudeh/Documents/yosys/yosys)
+MY_SCRIPT ?= $(SCRIPTS_DIR)/getFeatures.tcl
 getFeatures: 
-	($(TIME_CMD) $(YOSYS_CMD) $(YOSYS_FLAGS) -c $(MY_SCRIPT)) 2>&1 | tee $(LOG_DIR)/getFeatures.log
+	($(TIME_CMD) $(MY_YOSYS_CMD) $(YOSYS_FLAGS) -c $(MY_SCRIPT)) 2>&1 | tee $(LOG_DIR)/getFeatures.log
+#	($(TIME_CMD) $(YOSYS_CMD) $(YOSYS_FLAGS) -c $(MY_SCRIPT)) 2>&1 | tee $(LOG_DIR)/getFeatures.log
 
 #gui_floorplan: gui_2_floorplan.odb
 #gui_place: gui_3_place.odb
@@ -1099,8 +1069,7 @@ my_gui: my_gui_6_final.odb
 
 $(foreach file,$(RESULTS_DEF),my_gui_$(file)): my_gui_%:
 	DEF_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
-	
+
 $(foreach file,$(RESULTS_ODB),my_gui_$(file)): my_gui_%:
 	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getLabels.tcl
-	
 
