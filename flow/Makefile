@@ -421,6 +421,7 @@ do-klayout_wrap:
 # ==============================================================================
 WRAP_CFG = $(PLATFORM_DIR)/wrapper.cfg
 
+
 export TCLLIBPATH := util/cell-veneer $(TCLLIBPATH)
 $(WRAPPED_LEFS):
 	mkdir -p $(OBJECTS_DIR)/lef $(OBJECTS_DIR)/def
@@ -600,7 +601,7 @@ $(RESULTS_DIR)/2_floorplan.sdc: $(RESULTS_DIR)/2_1_floorplan.odb
 
 .PHONY: do-floorplan
 do-floorplan:
-	mkdir -p $(RESULTS_DIR) $(LOG_DIR) $(REPORTS_DIR)
+	mkdir -p $(LOG_DIR) $(REPORTS_DIR)
 	$(UNSET_AND_MAKE) do-2_1_floorplan do-2_2_floorplan_io do-2_3_floorplan_tdms do-2_4_floorplan_macro do-2_5_floorplan_tapcell do-2_6_floorplan_pdn do-2_floorplan
 
 .PHONY: clean_floorplan
@@ -654,7 +655,7 @@ $(eval $(call do-copy,3_place,2_floorplan.sdc,,.sdc))
 
 .PHONY: do-place
 do-place:
-	mkdir -p $(RESULTS_DIR) $(LOG_DIR) $(REPORTS_DIR)
+	mkdir -p $(LOG_DIR) $(REPORTS_DIR)
 	$(UNSET_AND_MAKE) do-3_1_place_gp_skip_io do-3_2_place_iop do-3_3_place_gp do-3_4_place_resized do-3_5_place_dp do-3_place do-3_place.sdc
 
 # Clean Targets
@@ -734,7 +735,7 @@ $(eval $(call do-copy,5_route,4_cts.sdc,,.sdc))
 
 .PHONY: do-route
 do-route:
-	mkdir -p $(RESULTS_DIR) $(LOG_DIR) $(REPORTS_DIR)
+	mkdir -p $(LOG_DIR) $(REPORTS_DIR)
 	$(UNSET_AND_MAKE) do-5_1_grt do-5_2_route do-5_route do-5_route.sdc
 
 $(RESULTS_DIR)/5_route.v:
@@ -804,7 +805,7 @@ $(RESULTS_DIR)/6_final.def: $(LOG_DIR)/6_report.log
 
 .PHONY: do-finish
 do-finish:
-	mkdir -p $(RESULTS_DIR) $(LOG_DIR) $(REPORTS_DIR)
+	mkdir -p $(LOG_DIR) $(REPORTS_DIR)
 	$(UNSET_AND_MAKE) do-6_1_fill do-6_1_fill.sdc do-6_final.sdc do-6_report do-gds elapsed
 
 .PHONY: skip_place
@@ -862,24 +863,16 @@ clean_abstract:
 # Merge wrapped macros using Klayout
 #-------------------------------------------------------------------------------
 $(WRAPPED_GDSOAS): $(OBJECTS_DIR)/klayout_wrap.lyt $(WRAPPED_LEFS)
-	$(UNSET_AND_MAKE) do-wrapped-gdsoas
-
-.PHONY: do-wrapped-gdsoas
-do-wrapped-gdsoas:
-ifeq ($(WRAPPED_GDSOAS),)
-	@echo "Skipping wrapped GDSOA generation"
-else
 	$(call KLAYOUT_FOUND)
-	($(TIME_CMD) $(KLAYOUT_CMD) -zz -rd design_name=$(basename $(notdir $(WRAPPED_GDSOAS))) \
-	        -rd in_def=$(OBJECTS_DIR)/def/$(notdir $(WRAPPED_GDSOAS:$(STREAM_SYSTEM_EXT)=def)) \
+	($(TIME_CMD) $(KLAYOUT_CMD) -zz -rd design_name=$(basename $(notdir $@)) \
+	        -rd in_def=$(OBJECTS_DIR)/def/$(notdir $(@:$(STREAM_SYSTEM_EXT)=def)) \
 	        -rd in_files="$(ADDITIONAL_GDSOAS)" \
 	        -rd config_file=$(FILL_CONFIG) \
 	        -rd seal_file="" \
-	        -rd out_file=$(WRAPPED_GDSOAS) \
+	        -rd out_file=$@ \
 	        -rd tech_file=$(OBJECTS_DIR)/klayout_wrap.lyt \
 	        -rd layer_map=$(GDS_LAYER_MAP) \
-	        -r $(UTILS_DIR)/def2stream.py) 2>&1 | tee $(LOG_DIR)/6_merge_$(basename $(notdir $(WRAPPED_GDSOAS))).log
-endif
+	        -r $(UTILS_DIR)/def2stream.py) 2>&1 | tee $(LOG_DIR)/6_merge_$(basename $(notdir $@)).log
 
 # Merge GDS using Klayout
 #-------------------------------------------------------------------------------
@@ -904,7 +897,7 @@ $(RESULTS_DIR)/6_final.v: $(LOG_DIR)/6_report.log
 
 .PHONY: do-gds
 do-gds:
-	$(UNSET_AND_MAKE) do-klayout_tech do-klayout do-klayout_wrap do-wrapped-gdsoas do-gds-merged
+	$(UNSET_AND_MAKE) do-klayout_tech do-klayout do-klayout_wrap do-gds-merged
 	cp $(GDS_MERGED_FILE) $(GDS_FINAL_FILE)
 
 $(GDS_FINAL_FILE): $(GDS_MERGED_FILE)
