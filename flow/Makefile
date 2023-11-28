@@ -96,7 +96,13 @@
 # DESIGN_CONFIG=./designs/gf180/jpeg/config.mk
 # DESIGN_CONFIG=./designs/gf180/riscv32i/config.mk
 # DESIGN_CONFIG=./designs/gf180/uart-blocks/config.mk
-#
+
+#DESIGN_CONFIG=./designs/ihp-sg13g2/aes/config.mk
+#DESIGN_CONFIG=./designs/ihp-sg13g2/ibex/config.mk
+#DESIGN_CONFIG=./designs/ihp-sg13g2/gcd/config.mk
+#DESIGN_CONFIG=./designs/ihp-sg13g2/spi/config.mk
+#DESIGN_CONFIG=./designs/ihp-sg13g2/riscv32i/config.mk
+
 # Default design
  DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
 
@@ -158,7 +164,7 @@ export TEST_DIR      ?= $(FLOW_HOME)/test
 # Include design and platform configuration
 include $(DESIGN_CONFIG)
 
-PUBLIC=nangate45 sky130hd sky130hs asap7
+PUBLIC=nangate45 sky130hd sky130hs asap7 ihp-sg13g2 gf180
 
 ifneq ($(wildcard $(PLATFORM_HOME)/$(PLATFORM)),)
   export PLATFORM_DIR = $(PLATFORM_HOME)/$(PLATFORM)
@@ -170,9 +176,6 @@ else
   $(error [ERROR][FLOW] Platform '$(PLATFORM)' not found.)
 endif
 
-ifeq ($(MAKELEVEL),0)
-$(info [INFO][FLOW] Using platform directory $(PLATFORM_DIR))
-endif
 include $(PLATFORM_DIR)/config.mk
 
 export GALLERY_REPORT ?= 0
@@ -505,7 +508,10 @@ else ifneq ($(FOOTPRINT_TCL),)
 IS_CHIP = 1
 endif
 
-UNSET_AND_MAKE = @bash -c 'for var in $(UNSET_VARIABLES_NAMES); do unset $$var; done; $(MAKE) --no-print-directory DESIGN_CONFIG=$(DESIGN_CONFIG) $$@' --
+UNSET_VARS = for var in $(UNSET_VARIABLES_NAMES); do unset $$var; done
+
+SUB_MAKE = $(MAKE) $(foreach V,$(COMMAND_LINE_ARGS), $(if $($V),$V=$(shell echo $($V) | sed 's/ /\\ /g'),$V='')) --no-print-directory DESIGN_CONFIG=$(DESIGN_CONFIG)
+UNSET_AND_MAKE = @bash -c '$(UNSET_VARS); $(SUB_MAKE) $$@' --
 
 # Separate dependency checking and doing a step. This can
 # be useful to retest a stage without having to delete the
@@ -538,8 +544,9 @@ $(if $(5),$(5),$(RESULTS_DIR))/$(1)$(if $(4),$(4),.odb): $(2)
 
 .PHONY: do-$(1)
 do-$(1):
-	($(TIME_CMD) $(OPENROAD_CMD) $(SCRIPTS_DIR)/$(3).tcl -metrics $(LOG_DIR)/$(1).json) 2>&1 | tee $(LOG_DIR)/$(1).tmp.log
-	mv $(LOG_DIR)/$(1).tmp.log $(LOG_DIR)/$(1).log
+	(trap 'mv $(LOG_DIR)/$(1).tmp.log $(LOG_DIR)/$(1).log' EXIT; \
+	 $(TIME_CMD) $(OPENROAD_CMD) $(SCRIPTS_DIR)/$(3).tcl -metrics $(LOG_DIR)/$(1).json) 2>&1 | \
+	 tee $(LOG_DIR)/$(1).tmp.log
 endef
 
 # generate make rules to copy a file, if a dependency change and
@@ -835,7 +842,6 @@ skip_resize: $(RESULTS_DIR)/3_3_place_gp.odb
 skip_cts: $(RESULTS_DIR)/3_place.odb $(RESULTS_DIR)/3_place.sdc
 	# mock all intermediate results
 	cp $(RESULTS_DIR)/3_place.odb $(RESULTS_DIR)/4_1_cts.odb
-	cp $(RESULTS_DIR)/3_place.odb $(RESULTS_DIR)/4_2_cts_fillcell.odb
 	cp $(RESULTS_DIR)/3_place.sdc $(RESULTS_DIR)/4_cts.sdc
 	cp $(RESULTS_DIR)/3_place.odb $(RESULTS_DIR)/4_cts.odb
 
@@ -965,9 +971,7 @@ clean_finish:
 # ==============================================================================
 
 .PHONY: all
-all: $(SDC_FILE) $(WRAPPED_LIBS) $(DONT_USE_LIBS) $(OBJECTS_DIR)/klayout.lyt $(WRAPPED_GDSOAS) $(DONT_USE_SC_LIB)
-	mkdir -p $(RESULTS_DIR) $(LOG_DIR) $(REPORTS_DIR)
-	($(TIME_CMD) $(OPENROAD_CMD) $(SCRIPTS_DIR)/run_all.tcl -metrics $(LOG_DIR)/run_all.json) 2>&1 | tee $(LOG_DIR)/run_all.log
+all: synth floorplan place cts route finish
 
 .PHONY: clean
 clean:
@@ -1074,7 +1078,7 @@ handoff : all_defs all_verilog
 
 .PHONY: print-%
 # Print any variable, for instance: make print-DIE_AREA
-print-%  : ; @echo $* = $($*)
+print-%  : ; @echo "$* = $($*)"
 
 .PHONY: test-unset-and-make-%
 test-unset-and-make-%: ; $(UNSET_AND_MAKE) $*

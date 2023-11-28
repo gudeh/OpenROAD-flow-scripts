@@ -1,6 +1,6 @@
 utl::set_metrics_stage "floorplan__{}"
 source $::env(SCRIPTS_DIR)/load.tcl
-load_design 1_synth.v 1_synth.sdc "Starting floorplan"
+load_design 1_synth.v 1_synth.sdc
 
 #Run check_setup
 puts "\n=========================================================================="
@@ -43,14 +43,14 @@ if {[info exists ::env(FLOORPLAN_DEF)]} {
   initialize_floorplan -utilization $::env(CORE_UTILIZATION) \
                        -aspect_ratio $aspect_ratio \
                        -core_space $core_margin \
-                       -site $::env(PLACE_SITE)
+                       -sites $::env(PLACE_SITE)
 
 # Initialize floorplan using DIE_AREA/CORE_AREA
 # ----------------------------------------------------------------------------
 } else {
   initialize_floorplan -die_area $::env(DIE_AREA) \
                        -core_area $::env(CORE_AREA) \
-                       -site $::env(PLACE_SITE)
+                       -sites $::env(PLACE_SITE)
 }
 
 if { [info exists ::env(MAKE_TRACKS)] } {
@@ -111,7 +111,7 @@ puts "Default units for flow"
 report_units
 report_units_metric
 source $::env(SCRIPTS_DIR)/report_metrics.tcl
-report_metrics "floorplan final" false false
+report_metrics 2 "floorplan final" false false
 
 if { [info exist ::env(RESYNTH_AREA_RECOVER)] && $::env(RESYNTH_AREA_RECOVER) == 1 } {
 
