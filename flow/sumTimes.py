@@ -45,7 +45,11 @@ def process_folders(root_folder='./'):
         if os.path.basename(rel_path) == 'base':
             print(f"\nProcessing folder: {root}")
             result = process_log_files(root)
-            for file_name, elapsed_time in result.items():
+
+            # Sort the result dictionary items by file_name
+            sorted_results = sorted(result.items(), key=lambda x: x[0])
+
+            for file_name, elapsed_time in sorted_results:
                 print(f"{file_name}: Elapsed Time - {elapsed_time}")
 
             total_seconds = sum_elapsed_times(result)
