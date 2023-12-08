@@ -26,6 +26,7 @@ $__make clean_all clean_metadata 2>&1 | tee $LOG_FILE
 set +e
 
 $__make finish metadata 2>&1 | tee -a $LOG_FILE
+$__make check_rudy 2>&1 | tee -a $LOG_FILE
 
 # Save the return code to return as the overall status after we package
 # the results
