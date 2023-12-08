@@ -1094,6 +1094,6 @@ export PRIVATE_DIR ?= ../../private_tool_scripts
 
 # New command for testing RUDY
 check_rudy: my_gui_6_final.odb
-
+	mkdir -p $(WORK_HOME)/reports/evaluateRUDY/
 $(foreach file,$(RESULTS_ODB),my_gui_$(file)): my_gui_%:
 	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/getRudy.tcl
