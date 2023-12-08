@@ -33,8 +33,8 @@ export FILL_CELLS = sg13g2_fill_1 sg13g2_fill_2 sg13g2_fill_4 sg13g2_fill_8
 #  ----------------------------------------------------
 # Set the TIEHI/TIELO cells
 # These are used in yosys synthesis to avoid logical 1/0's in the netlist
-export TIEHI_CELL_AND_PORT = sg13g2_tiehi HI
-export TIELO_CELL_AND_PORT = sg13g2_tielo LO
+export TIEHI_CELL_AND_PORT = sg13g2_tiehi L_HI
+export TIELO_CELL_AND_PORT = sg13g2_tielo L_LO
 
 # Used in synthesis
 export MIN_BUF_CELL_AND_PORTS = sg13g2_buf_1 A X
@@ -62,6 +62,10 @@ export IO_PLACER_V = Metal3
 
 # Define default PDN config
 export PDN_TCL ?= $(PLATFORM_DIR)/pdn.tcl
+
+# There are no Endcap and Welltie cells in this PDK, so
+# `cut_rows` has to be called from the tapcell script.
+export TAPCELL_TCL = $(PLATFORM_DIR)/tapcell.tcl
 
 export MACRO_PLACE_HALO ?= 40 40
 export MACRO_PLACE_CHANNEL ?= 80 80
