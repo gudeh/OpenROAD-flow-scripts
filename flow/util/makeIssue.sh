@@ -19,7 +19,7 @@ ISSUE_CP_PLATFORM_FILE_VARS="LIB_FILES \
                              SC_LEF \
                              TECH_LEF \
                              ADDITIONAL_LEFS \
-                             CLKGATE_MAP_FILE \
+                             CLKGATE_LE \
                              ADDER_MAP_FILE \
                              LATCH_MAP_FILE \
                              CDL_FILE \
@@ -89,6 +89,7 @@ tar --ignore-failed-read -czhf $1_${ISSUE_TAG}.tar.gz \
     $OBJECTS_DIR \
     $REPORTS_DIR \
     $RESULTS_DIR \
+    $REPORTS_DIR/../../../evaluate_RUDY/ \
     $SCRIPTS_DIR \
     $(for f in $ISSUE_CP_FILES; do echo $f; done | sort | uniq)
 
