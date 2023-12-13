@@ -89,7 +89,6 @@ tar --ignore-failed-read -czhf $1_${ISSUE_TAG}.tar.gz \
     $OBJECTS_DIR \
     $REPORTS_DIR \
     $RESULTS_DIR \
-    $REPORTS_DIR/../../../evaluate_RUDY/ \
     $SCRIPTS_DIR \
     $(for f in $ISSUE_CP_FILES; do echo $f; done | sort | uniq)
 

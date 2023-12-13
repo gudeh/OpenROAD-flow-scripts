@@ -1091,10 +1091,7 @@ include $(UTILS_DIR)/utils.mk
 export PRIVATE_DIR ?= ../../private_tool_scripts
 -include $(PRIVATE_DIR)/private.mk
 
-DIRECTORY := $(WORK_HOME)/reports/evaluate\_RUDY/
-$(DIRECTORY):
-	mkdir -p $(DIRECTORY)
-check_rudy: $(DIRECTORY) my_gui_3_place.odb
+check_rudy: my_gui_3_place.odb
 
 $(foreach file,$(RESULTS_ODB),my_gui_$(file)): my_gui_%:
 	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/get_rudy.tcl
