@@ -19,7 +19,7 @@ ISSUE_CP_PLATFORM_FILE_VARS="LIB_FILES \
                              SC_LEF \
                              TECH_LEF \
                              ADDITIONAL_LEFS \
-                             CLKGATE_LE \
+			     CLKGATE_MAP_FILE \
                              ADDER_MAP_FILE \
                              LATCH_MAP_FILE \
                              CDL_FILE \
