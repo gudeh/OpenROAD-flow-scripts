@@ -33,9 +33,21 @@ set global_placement_args {}
 if {$::env(GPL_ROUTABILITY_DRIVEN)} {
   lappend global_placement_args {-routability_driven}
 }
+if {$::env(GPL_ROUTABILITY_DRIVEN)} {
+  lappend global_placement_args {-routability_target_rc_metric}
+  lappend global_placement_args {1.0} ;# default is 1.25
+  lappend global_placement_args {-routability_max_inflation_ratio}  
+  lappend global_placement_args {2.5} ;#default is 2.5
+}
+# if {$::env(GPL_ROUTABILITY_DRIVEN)} {
+#   lappend global_placement_args {-routability_target_rc_metric}
+#   lappend global_placement_args {1.0}
+# }
 if {$::env(GPL_TIMING_DRIVEN)} {
   lappend global_placement_args {-timing_driven}
 }
+
+
 
 proc do_placement {place_density global_placement_args} {
   set all_args [concat [list -density $place_density \
