@@ -13,6 +13,13 @@ test/test_helper.sh jpeg gf180
 test/test_helper.sh riscv32i gf180
 test/test_helper.sh uart-blocks gf180
 
+test/test_helper.sh gcd ihp-sgh13g2
+test/test_helper.sh aes ihp-sgh13g2
+test/test_helper.sh ibex ihp-sgh13g2
+test/test_helper.sh jpeg ihp-sgh13g2
+test/test_helper.sh riscv32i ihp-sgh13g2
+test/test_helper.sh spi ihp-sgh13g2
+
 test/test_helper.sh gcd asap7
 test/test_helper.sh aes asap7
 test/test_helper.sh ethmac asap7
