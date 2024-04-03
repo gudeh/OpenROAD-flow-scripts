@@ -1,9 +1,9 @@
 # test/test_helper.sh gcd sky130hs
 # test/test_helper.sh ibex sky130hs
 # test/test_helper.sh jpeg sky130hs
-test/test_helper.sh riscv32i sky130hs
-test/test_helper.sh coyote_tc sky130hs
-test/test_helper.sh aes sky130hs
+# test/test_helper.sh riscv32i sky130hs
+# test/test_helper.sh coyote_tc sky130hs
+# test/test_helper.sh aes sky130hs
 
 # test/test_helper .sh aes gf180 
 # test/test_helper.sh aes-hybrid gf180
@@ -27,9 +27,14 @@ test/test_helper.sh aes sky130hs
 # test/test_helper.sh uart asap7
 # test/test_helper.sh riscv32i asap7
 
-# test/test_helper.sh gcd nangate45
-# test/test_helper.sh aes nangate45
-# test/test_helper.sh dynamic_node nangate45
-# test/test_helper.sh tinyRocket nangate45
-# test/test_helper.sh jpeg nangate45
-# test/test_helper.sh ibex nangate45
+test/test_helper.sh black_parrot nangate45
+test/test_helper.sh bp_fe_top nangate45
+test/test_helper.sh tinyRocket nangate45
+test/test_helper.sh bp_multi_top nangate45
+test/test_helper.sh swerv nangate45
+test/test_helper.sh ariane133 nangate45
+test/test_helper.sh gcd nangate45
+test/test_helper.sh aes nangate45
+test/test_helper.sh dynamic_node nangate45
+test/test_helper.sh jpeg nangate45
+test/test_helper.sh ibex nangate45
