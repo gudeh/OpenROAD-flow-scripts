@@ -1126,10 +1126,10 @@ include $(UTILS_DIR)/utils.mk
 export PRIVATE_DIR ?= ../../private_tool_scripts
 -include $(PRIVATE_DIR)/private.mk
 
-check_rudy: 3_place.odb
-$(foreach file,$(RESULTS_ODB),$(file)): %:
-	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/get_rudy.tcl
+# check_rudy: 3_place.odb
+# $(foreach file,$(RESULTS_ODB),$(file)): %:
+# 	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/get_rudy.tcl
 
-check_final: 6_final.odb
-$(foreach file,$(RESULTS_ODB),$(file)): %:
-	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/get_rudy.tcl
+# check_final: 6_final.odb
+# $(foreach file,$(RESULTS_ODB),$(file)): %:
+# 	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/get_rudy.tcl

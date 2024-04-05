@@ -27,7 +27,7 @@ set +e
 
 $__make finish metadata 2>&1 | tee -a $LOG_FILE
 #$__make check_rudy 2>&1 | tee -a $LOG_FILE
-$__make check_final
+# $__make check_final
 
 # Save the return code to return as the overall status after we package
 # the results
@@ -60,8 +60,13 @@ fi
 # Only enabled abort on error at the end to allow script to reach make issue
 set -e
 
-if [ ! -z ${MAKE_ISSUE+x} ]; then
-  $__make final_report_issue 2>&1 | tee -a $LOG_FILE
-fi
+# if [ ! -z ${MAKE_ISSUE+x} ]; then
+#   $__make final_report_issue 2>&1 | tee -a $LOG_FILE
+# fi
+
+$__make final_report_issue 2>&1 | tee -a $LOG_FILE
+$__make clean_all 2>&1 | tee -a $LOG_FILE
+rm vars*
+rm run-me*
 
 exit $ret
