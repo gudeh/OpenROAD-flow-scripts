@@ -36,6 +36,7 @@ if {$::env(GPL_ROUTABILITY_DRIVEN)} {
       lappend global_placement_args {-routability_target_rc_metric} $::env(GPL_TARGET_RC)
   }
 }
+
 if {$::env(GPL_ROUTABILITY_DRIVEN)} {
   lappend global_placement_args {-routability_target_rc_metric}
   lappend global_placement_args {1.0} ;# default is 1.25
