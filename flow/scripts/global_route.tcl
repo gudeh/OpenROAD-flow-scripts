@@ -15,7 +15,7 @@ if {[info exist env(FASTROUTE_TCL)]} {
     set_macro_extension $env(MACRO_EXTENSION)
   }
 }
-set_global_routing_layer_adjustment $env(MIN_ROUTING_LAYER)-$env(MAX_ROUTING_LAYER) 0
+#set_global_routing_layer_adjustment $env(MIN_ROUTING_LAYER)-$env(MAX_ROUTING_LAYER) 0
 
 # The default behavior if the user didn't specify GLOBAL_ROUTE_ARGS is to
 # produce a drc report every 5 iterations.

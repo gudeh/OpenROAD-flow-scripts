@@ -14,7 +14,7 @@ if {[info exist env(FASTROUTE_TCL)]} {
     set_macro_extension $env(MACRO_EXTENSION)
   }
 }
-set_global_routing_layer_adjustment $env(MIN_ROUTING_LAYER)-$env(MAX_ROUTING_LAYER) 0
+#set_global_routing_layer_adjustment $env(MIN_ROUTING_LAYER)-$env(MAX_ROUTING_LAYER) 0
 
 # check the lower boundary of the PLACE_DENSITY and add PLACE_DENSITY_LB_ADDON if it exists
 if {[info exist ::env(PLACE_DENSITY_LB_ADDON)]} {
