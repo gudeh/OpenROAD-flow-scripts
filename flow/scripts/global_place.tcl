@@ -41,8 +41,6 @@ if {$::env(GPL_TIMING_DRIVEN)} {
   lappend global_placement_args {-timing_driven}
 }
 
-
-
 proc do_placement {place_density global_placement_args} {
   set all_args [concat [list -density $place_density \
     -pad_left $::env(CELL_PAD_IN_SITES_GLOBAL_PLACEMENT) \
