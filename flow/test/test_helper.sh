@@ -65,7 +65,7 @@ set -e
 # fi
 
 $__make final_report_issue 2>&1 | tee -a $LOG_FILE
-$__make clean_all 2>&1 | tee -a $LOG_FILE
+#$__make clean_all 2>&1 | tee -a $LOG_FILE
 rm vars*
 rm run-me*
 

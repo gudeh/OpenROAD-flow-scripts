@@ -1,11 +1,6 @@
-test/test_helper.sh black_parrot nangate45
-test/test_helper.sh bp_fe_top nangate45
-test/test_helper.sh tinyRocket nangate45
-test/test_helper.sh bp_multi_top nangate45
-test/test_helper.sh swerv nangate45
-test/test_helper.sh ariane133 nangate45
 test/test_helper.sh gcd nangate45
 test/test_helper.sh aes nangate45
+test/test_helper.sh tinyRocket nangate45
 test/test_helper.sh dynamic_node nangate45
 test/test_helper.sh jpeg nangate45
 test/test_helper.sh ibex nangate45
@@ -38,3 +33,9 @@ test/test_helper.sh ibex asap7
 test/test_helper.sh jpeg asap7
 test/test_helper.sh uart asap7
 test/test_helper.sh riscv32i asap7
+
+test/test_helper.sh black_parrot nangate45
+test/test_helper.sh bp_fe_top nangate45
+test/test_helper.sh bp_multi_top nangate45
+test/test_helper.sh swerv nangate45
+test/test_helper.sh ariane133 nangate45
