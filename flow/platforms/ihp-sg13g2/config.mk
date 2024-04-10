@@ -74,9 +74,9 @@ export MACRO_PLACE_CHANNEL ?= 80 80
 # Place
 # --------------------------------------------------------
 # default cell padding for cells 
-export CELL_PAD_IN_SITES_GLOBAL_PLACEMENT ?= 0
+export CELL_PAD_IN_SITES_GLOBAL_PLACEMENT ?= 2
 export CELL_PAD_IN_SITES_DETAIL_PLACEMENT ?= 1
-export PLACE_DENSITY ?= 0.75
+export PLACE_DENSITY ?= 0.65
 # --------------------------------------------------------
 #  CTS
 #  -------------------------------------------------------

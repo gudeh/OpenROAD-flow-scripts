@@ -70,7 +70,7 @@ export CELL_PAD_IN_SITES_GLOBAL_PLACEMENT ?= 0
 export CELL_PAD_IN_SITES_DETAIL_PLACEMENT ?= 0
 #
 
-export PLACE_DENSITY ?= 0.85
+export PLACE_DENSITY ?= 0.30
 
 # --------------------------------------------------------
 #  CTS
