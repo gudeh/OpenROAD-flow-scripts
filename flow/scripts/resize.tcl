@@ -31,7 +31,15 @@ if { [info exists ::env(SLEW_MARGIN)] && $::env(SLEW_MARGIN) > 0.0} {
   append additional_args " -slew_margin $::env(SLEW_MARGIN)"
 }
 
+report_tns
+report_wns
+#report_checks
+
 repair_design {*}$additional_args
+
+report_tns
+report_wns
+#report_checks
 
 if { [info exists env(TIE_SEPARATION)] } {
   set tie_separation $env(TIE_SEPARATION)
