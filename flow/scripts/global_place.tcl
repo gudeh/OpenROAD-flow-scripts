@@ -30,6 +30,7 @@ if {$::env(GPL_ROUTABILITY_DRIVEN)} {
 # Parameters for timing driven mode in global placement
 if {$::env(GPL_TIMING_DRIVEN)} {
   lappend global_placement_args {-timing_driven}
+  lappend global_placement_args {-timing_driven_check_overflow} 0.22
 }
 
 proc do_placement {place_density global_placement_args} {
