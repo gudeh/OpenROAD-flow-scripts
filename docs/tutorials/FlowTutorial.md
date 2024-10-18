@@ -69,7 +69,7 @@ OpenROAD-flow-scripts installation is complete.
 Launch the docker with OpenROAD-flow-scripts container as follows:
 
 ```shell
-docker run --rm -it -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd)/flow:/OpenROAD-flow-scripts/flow openroad/flow-ubuntu22-builder
+docker run --rm -it -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd)/flow:/OpenROAD-flow-scripts/flow openroad/flow-ubuntu22.04-builder
 ```
 
 :::{seealso}
@@ -160,7 +160,7 @@ constraints. We will use default configuration variables for this tutorial.
 |--------------------|------------------------------------------------------------------------------------------------------------------------------------------|
 | `PLATFORM`         | Specifies Process design kit.                                                                                                            |
 | `DESIGN_NAME`      | The name of the top-level module of the design                                                                                           |
-| `VERILOG_FILES`    | The path to the design Verilog files                                                                                                     |
+| `VERILOG_FILES`    | The path to the design Verilog files or JSON files providing a description of modules (check `yosys -h write_json` for more details).    |
 | `SDC_FILE`         | The path to design `.sdc` file                                                                                                           |
 | `CORE_UTILIZATION` | The core utilization percentage.                                                                                                         |
 | `PLACE_DENSITY`    | The desired placement density of cells. It reflects how spread the cells would be on the core area. 1 = closely dense. 0 = widely spread |
@@ -361,7 +361,7 @@ The table below briefly describes the reports directory files.
 
 | File Name              | Description                                              |
 |------------------------|----------------------------------------------------------|
-| `congestion.rpt`       | Gloabl routing congestion if occurred.                   |
+| `congestion.rpt`       | Global routing congestion if occurred.                   |
 | `5_route_drc.rpt`      | DRC violations if occurred.                              |
 | `final_clocks.webp`    | OR extracted image reference after clock tree synthesis. |
 | `final_resizer.webp`   | OR extracted image reference after resizer.              |

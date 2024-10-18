@@ -4,7 +4,6 @@ export PLATFORM    = sky130hd_fakestack
 
 export SYNTH_HIERARCHICAL = 1
 export MAX_UNGROUP_SIZE = 10000
-export RTLMP_FLOW = True
 
 export SDC_FILE      = ./designs/$(PLATFORM)/$(DESIGN_NICKNAME)/constraint.sdc
 

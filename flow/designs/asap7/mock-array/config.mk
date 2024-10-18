@@ -23,11 +23,17 @@ export DIE_AREA  = $(shell \
   cd $(dir $(DESIGN_CONFIG)) && \
   python3 -c "import config; print(f'{0} {0} {config.die_width} {config.die_height}')")
 
+export MACRO_PLACE_HALO = 0 2.16
+export RTLMP_BOUNDARY_WT = 0
+export RTLMP_FLOW ?= 1
+
 export BLOCKS                ?= Element
 
 ifneq ($(BLOCKS),)
   export GDS_ALLOW_EMPTY       = Element
-  export MACRO_PLACEMENT_TCL   = ./designs/asap7/mock-array/macro-placement.tcl
+  ifneq ($(RTLMP_FLOW), 1)
+    export MACRO_PLACEMENT_TCL   = ./designs/asap7/mock-array/macro-placement.tcl
+  endif
   export PDN_TCL               = $(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl
 endif
 
@@ -40,19 +46,25 @@ verilog:
 	export MOCK_ARRAY_COLS=$(word 2, $(MOCK_ARRAY_TABLE)) ; \
 	./designs/asap7/mock-array/verilog.sh
 
-# If this design isn't quickly done in detailed routing, something is wrong.
-# At time of adding this option, only 12 iterations were needed for 0
-# violations.
-export DETAILED_ROUTE_ARGS   = -bottom_routing_layer M2 -top_routing_layer M7 -save_guide_updates -verbose 1 -droute_end_iter 15
+.PHONY: simulate
+simulate:
+	export MOCK_ARRAY_ROWS=$(word 1, $(MOCK_ARRAY_TABLE)) ; \
+	export MOCK_ARRAY_COLS=$(word 2, $(MOCK_ARRAY_TABLE)) ; \
+	./designs/asap7/mock-array/simulate.sh
 
-# since we are specifying DETAILED_ROUTE_ARGS, we need to communicate the
-# same information to other stages in the flow.
+.PHONY: power
+power:
+	$(OPENSTA_EXE) -no_init -exit designs/asap7/mock-array/power.tcl
+
+# Routing by abutment should be easy, limit iterations
+export DETAILED_ROUTE_END_ITERATION = 6
+
 export MIN_ROUTING_LAYER = M2
 export MAX_ROUTING_LAYER = M7
+export ROUTING_LAYER_ADJUSTMENT = 0.45
 
 # works with 28 or more iterations as of writing, so give it a few more.
 export GLOBAL_ROUTE_ARGS=-congestion_iterations 40 -verbose
-export FASTROUTE_TCL = ./designs/$(PLATFORM)/mock-array/fastroute.tcl
 
 # ensure we have some rows, so we don't get a bad clock skew.
 export MACRO_HALO_X            = 0.5

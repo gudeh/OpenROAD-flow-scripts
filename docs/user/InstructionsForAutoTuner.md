@@ -23,18 +23,20 @@ User-defined coefficient values (`coeff_perform`, `coeff_power`, `coeff_area`) o
 
 ## Setting up AutoTuner
 
-To setup AutoTuner, make sure you have a virtual environment set up with
-Python 3.9.X. There are plenty of ways to do this, we recommend using 
-[Miniconda](https://docs.conda.io/en/latest/miniconda.html),
-which is a free minimal installer for the package manager `conda`. 
+We have provided two convenience scripts, `./install.sh` and `./setup.sh`
+that works in Python3.8 for installation and configuration of AutoTuner,
+as shown below:
+
+```{note}
+Make sure you run the following commands in `./tools/AutoTuner/src/autotuner`.
+```
 
 ```shell
-# set up conda environment
-conda create -n autotuner_env python=3.9
-conda activate autotuner_env
+# Install prerequisites
+./tools/AutoTuner/install.sh
 
-# install requirements
-pip install -r ./tools/AutoTuner/requirements.txt
+# Start virtual environment
+./tools/AutoTuner/setup.sh
 ```
 
 ## Input JSON structure
@@ -98,7 +100,6 @@ For Global Routing parameters that are set on `fastroute.tcl` you can use:
 * `_FR_GR_SEED`
   - Global route random seed. This will create a copy of `_FR_FILE_PATH` and modify the global route random seed.
 
-
 ## How to use
 
 ### General Information
@@ -130,8 +131,8 @@ Example:
 
 ```shell
 python3 distributed.py --design gcd --platform sky130hd \
-                       --config ../designs/sky130hd/gcd/autotuner.json \
-                       tune
+                       --config ../../../../flow/designs/sky130hd/gcd/autotuner.json \
+                       tune --samples 5
 ```
 #### Sweep only 
 
@@ -144,6 +145,12 @@ python3 distributed.py --design gcd --platform sky130hd \
                        --config distributed-sweep-example.json \
                        sweep
 ```
+
+
+### Google Cloud Platform (GCP) distribution with Ray
+
+GCP Setup Tutorial coming soon.
+
 
 ### List of input arguments
 | Argument                      | Description                                                                                           |
@@ -173,7 +180,7 @@ python3 distributed.py --design gcd --platform sky130hd \
 | `--openroad_threads`          | Max number of threads usable.                                                                         |
 | `--server`                    | The address of Ray server to connect.                                                                 |
 | `--port`                      | The port of Ray server to connect.                                                                    |
-| `-v` or `--verbose`           | Verbosity Level. [0: Only ray status, 1: print stderr, 2: also print training stdout.                  |
+| `-v` or `--verbose`           | Verbosity Level. [0: Only ray status, 1: print stderr, 2: print stdout on top of what is in level 0 and 1. ]                  |
 |                               |                                                                                                       |
 ### GUI
 
@@ -193,6 +200,16 @@ We show three different views possible at the end, namely: `Table View`, `Scatte
 ![Parallel Coordinate View](../images/Autotuner_best_parameter_view.webp)
 <p style="text-align: center;">Parallel Coordinate View (best run is in green)</p>
 
+## Testing framework
+
+Assuming the virtual environment is setup at `./tools/AutoTuner/autotuner_env`:
+
+```
+./tools/AutoTuner/setup.sh
+python3 ./tools/AutoTuner/test/smoke_test_sweep.py
+python3 ./tools/AutoTuner/test/smoke_test_tune.py
+python3 ./tools/AutoTuner/test/smoke_test_sample_iteration.py
+```
 
 ## Citation
 

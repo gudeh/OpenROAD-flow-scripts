@@ -14,11 +14,12 @@ export CORE_MARGIN = 2
 
 export PLACE_DENSITY = 0.75
 
-ifneq ($(USE_FILL),)
+ifeq ($(USE_FILL),1)
 export DESIGN_TYPE = CELL
 else
 export DESIGN_TYPE = CELL_NODEN
 endif
 
-export SKIP_PIN_SWAP     = 1
+#export SKIP_PIN_SWAP     = 1
 export SKIP_GATE_CLONING = 1
+

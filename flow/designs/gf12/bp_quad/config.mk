@@ -2,7 +2,6 @@ export DESIGN_NICKNAME = bp_quad
 export DESIGN_NAME = bsg_chip
 export PLATFORM    = gf12
 
-export RTLMP_FLOW = True
 export SYNTH_HIERARCHICAL = 1
 export MAX_UNGROUP_SIZE ?= 1000
 
