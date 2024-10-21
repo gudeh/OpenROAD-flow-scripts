@@ -1082,6 +1082,10 @@ check_rudy: 3_3_place_gp.odb
 $(foreach file,$(RESULTS_ODB),$(file)): %:
 	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/get_rudy.tcl
 
+check_density:
+	$(if $(STAGE),,$(error STAGE is not defined, call with STAGE=...))
+	ODB_FILE=$(RESULTS_DIR)/$(STAGE).odb stage=$(STAGE) $(OPENROAD_GUI_CMD) -exit $(SCRIPTS_DIR)/get_density.tcl
+
 # check_final: 6_final.odb
 # $(foreach file,$(RESULTS_ODB),$(file)): %:
 # 	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/get_rudy.tcl
