@@ -1062,9 +1062,9 @@ export PRIVATE_DIR ?= ../../private_tool_scripts
 -include $(PRIVATE_DIR)/private.mk
 
 # check_rudy: 3_place.odb
-check_rudy: 3_3_place_gp.odb
-$(foreach file,$(RESULTS_ODB),$(file)): %:
-	ODB_FILE=$(RESULTS_DIR)/$* $(OPENROAD_GUI_CMD) $(SCRIPTS_DIR)/get_rudy.tcl
+check_rudy:
+	$(if $(STAGE),,$(error STAGE is not defined, call with STAGE=...))
+	ODB_FILE=$(RESULTS_DIR)/$(STAGE).odb stage=$(STAGE) $(OPENROAD_GUI_CMD) -exit $(SCRIPTS_DIR)/get_rudy.tcl
 
 check_density:
 	$(if $(STAGE),,$(error STAGE is not defined, call with STAGE=...))
