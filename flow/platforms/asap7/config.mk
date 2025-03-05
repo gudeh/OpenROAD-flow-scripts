@@ -81,7 +81,7 @@ export DONT_USE_CELLS          += SDF* ICG*
 export LATCH_MAP_FILE          = $(PLATFORM_DIR)/yoSys/cells_latch_R.v
 export CLKGATE_MAP_FILE        = $(PLATFORM_DIR)/yoSys/cells_clkgate_R.v
 export ADDER_MAP_FILE         ?= $(PLATFORM_DIR)/yoSys/cells_adders_R.v
-export MAX_UNGROUP_SIZE       ?= 100
+export MAX_UNGROUP_SIZE       ?= 1000
 
 export ABC_DRIVER_CELL         = BUFx2_ASAP7_75t_R
 
@@ -115,12 +115,11 @@ export IO_PLACER_H             ?= M4
 export IO_PLACER_V             ?= M5
 
 export MACRO_PLACE_HALO        ?= 10 10
-export MACRO_PLACE_CHANNEL     ?= 12 12
 
 # the followings create a keep out / halo between
 # macro and core rows
-export MACRO_HALO_X            ?= 2
-export MACRO_HALO_Y            ?= 2
+export MACRO_ROWS_HALO_X            ?= 2
+export MACRO_ROWS_HALO_Y            ?= 2
 
 export PLACE_DENSITY ?= 0.60
 
@@ -165,7 +164,7 @@ ifeq ($(ASAP7_USELVT), 1)
 
    export ABC_DRIVER_CELL         = BUFx2_ASAP7_75t_L
 
-   export FILL_CELLS              ?= "FILLERxp5_ASAP7_75t_L"
+   export FILL_CELLS              ?= FILLERxp5_ASAP7_75t_L
 
    export TAP_CELL_NAME           ?= TAPCELL_ASAP7_75t_L
 
@@ -214,7 +213,7 @@ ifeq ($(ASAP7_USESLVT), 1)
 
    export ABC_DRIVER_CELL         = BUFx2_ASAP7_75t_SL
 
-   export FILL_CELLS              ?= "FILLERxp5_ASAP7_75t_SL"
+   export FILL_CELLS              ?= FILLERxp5_ASAP7_75t_SL
 
    export TAP_CELL_NAME		  ?= TAPCELL_ASAP7_75t_SL
 
@@ -272,8 +271,8 @@ export DONT_USE_SC_LIB        = $(OBJECTS_DIR)/lib/merged.lib
 
 # IR drop estimation supply net name to be analyzed and supply voltage variable
 # For multiple nets: PWR_NETS_VOLTAGES  = "VDD1 1.8 VDD2 1.2"
-export PWR_NETS_VOLTAGES  ?= "VDD $(VOLTAGE)"
-export GND_NETS_VOLTAGES  ?= "VSS 0.0"
+export PWR_NETS_VOLTAGES  ?= VDD $(VOLTAGE)
+export GND_NETS_VOLTAGES  ?= VSS 0.0
 export IR_DROP_LAYER ?= M1
 
 # Allow empty GDS cell

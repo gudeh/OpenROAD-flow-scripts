@@ -1,8 +1,6 @@
 export DESIGN_NAME = swerv_wrapper
 export PLATFORM    = nangate45
 
-export SYNTH_HIERARCHICAL = 1
-#
 # RTL_MP Settings
 export RTLMP_MAX_INST = 30000
 export RTLMP_MIN_INST = 5000
@@ -26,10 +24,10 @@ export CORE_AREA   = 10.07 11.2 1090 990
 export PLACE_PINS_ARGS = -exclude left:* -exclude right:* -exclude top:* -exclude bottom:0-200 -exclude bottom:1000-1100
 
 export MACRO_PLACE_HALO = 10 10
-export MACRO_PLACE_CHANNEL = 20 20
 
-export PLACE_DENSITY_LB_ADDON = 0.25
+export PLACE_DENSITY_LB_ADDON = 0.10
 export TNS_END_PERCENT        = 100
 
 export FASTROUTE_TCL = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NAME)/fastroute.tcl
 
+export GPL_KEEP_OVERFLOW = 0
