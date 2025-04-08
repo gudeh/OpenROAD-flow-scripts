@@ -196,7 +196,7 @@ configuration file.
 | <a name="VERILOG_FILES"></a>VERILOG_FILES| The path to the design Verilog files or JSON files providing a description of modules (check `yosys -h write_json` for more details).| | |
 | <a name="VERILOG_INCLUDE_DIRS"></a>VERILOG_INCLUDE_DIRS| Specifies the include directories for the Verilog input files.| | |
 | <a name="VERILOG_TOP_PARAMS"></a>VERILOG_TOP_PARAMS| Apply toplevel params (if exist).| | |
-| <a name="YOSYS_FLAGS"></a>YOSYS_FLAGS| Additional flags to pass to yosys.| | |
+| <a name="YOSYS_FLAGS"></a>YOSYS_FLAGS| Flags to pass to yosys.| -v 3| |
 ## synth variables
 
 - [ABC_AREA](#ABC_AREA)
@@ -235,8 +235,6 @@ configuration file.
 - [FLOORPLAN_DEF](#FLOORPLAN_DEF)
 - [HOLD_SLACK_MARGIN](#HOLD_SLACK_MARGIN)
 - [IO_CONSTRAINTS](#IO_CONSTRAINTS)
-- [IO_PLACER_H](#IO_PLACER_H)
-- [IO_PLACER_V](#IO_PLACER_V)
 - [MACRO_BLOCKAGE_HALO](#MACRO_BLOCKAGE_HALO)
 - [MACRO_PLACEMENT](#MACRO_PLACEMENT)
 - [MACRO_PLACEMENT_TCL](#MACRO_PLACEMENT_TCL)
@@ -249,7 +247,6 @@ configuration file.
 - [PDN_TCL](#PDN_TCL)
 - [PLACE_DENSITY](#PLACE_DENSITY)
 - [PLACE_DENSITY_LB_ADDON](#PLACE_DENSITY_LB_ADDON)
-- [PLACE_PINS_ARGS](#PLACE_PINS_ARGS)
 - [PLACE_SITE](#PLACE_SITE)
 - [REMOVE_ABC_BUFFERS](#REMOVE_ABC_BUFFERS)
 - [RESYNTH_AREA_RECOVER](#RESYNTH_AREA_RECOVER)
