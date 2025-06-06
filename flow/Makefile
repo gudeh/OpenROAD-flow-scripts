@@ -849,9 +849,14 @@ check_rudy:
 	$(if $(STAGE),,$(error STAGE is not defined, call with STAGE=...))
 	ODB_FILE=$(RESULTS_DIR)/$(STAGE).odb stage=$(STAGE) $(OPENROAD_GUI_CMD) -exit $(SCRIPTS_DIR)/get_rudy.tcl
 
+check_fastroute:
+	$(if $(STAGE),,$(error STAGE is not defined, call with STAGE=...))
+	ODB_FILE=$(RESULTS_DIR)/$(STAGE).odb stage=$(STAGE) $(OPENROAD_GUI_CMD) -exit $(SCRIPTS_DIR)/get_fastroute.tcl
+
 check_density:
 	$(if $(STAGE),,$(error STAGE is not defined, call with STAGE=...))
 	ODB_FILE=$(RESULTS_DIR)/$(STAGE).odb stage=$(STAGE) $(OPENROAD_GUI_CMD) -exit $(SCRIPTS_DIR)/get_density.tcl
+
 
 # check_final: 6_final.odb
 # $(foreach file,$(RESULTS_ODB),$(file)): %:

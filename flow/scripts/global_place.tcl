@@ -28,6 +28,7 @@ proc do_placement {global_placement_args} {
 
   lappend all_args {*}$::env(GLOBAL_PLACEMENT_ARGS)
 
+  global_placement_debug -pause 50 -update 50 -update_db
   log_cmd global_placement {*}$all_args
 }
 
