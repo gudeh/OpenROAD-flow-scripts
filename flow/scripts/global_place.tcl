@@ -24,7 +24,7 @@ set global_placement_args {}
 
 # Parameters for routability mode in global placement
 append_env_var global_placement_args GPL_ROUTABILITY_DRIVEN -routability_driven 0
-lappend global_placement_args -routability_max_inflation_ratio 3
+lappend global_placement_args -routability_max_inflation_ratio 4
 lappend global_placement_args -enable_routing_congestion
 
 
