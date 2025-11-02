@@ -106,4 +106,7 @@ gui::set_display_controls "Heat Maps/Routing Congestion" visible true
 
 save_image -resolution $resolution $::env(REPORTS_DIR)/final_congestion.webp
 
+gui::set_display_controls "Heat Maps/Estimated Congestion (RUDY)" visible true
+save_image -resolution $resolution $::env(REPORTS_DIR)/final_rudy.webp
+
 gui::restore_display_controls

@@ -24,6 +24,8 @@ set global_placement_args {}
 
 # Parameters for routability mode in global placement
 append_env_var global_placement_args GPL_ROUTABILITY_DRIVEN -routability_driven 0
+lappend global_placement_args -routability_max_inflation_ratio 3
+lappend global_placement_args -enable_routing_congestion
 
 # Parameters for timing driven mode in global placement
 if { $::env(GPL_TIMING_DRIVEN) } {
@@ -60,3 +62,45 @@ if { $::env(CLUSTER_FLOPS) } {
 report_metrics 3 "global place" false false
 
 write_db $::env(RESULTS_DIR)/3_3_place_gp.odb
+
+
+# from save_images.tcl
+source $::env(SCRIPTS_DIR)/util.tcl
+gui::save_display_controls
+set height [[[ord::get_db_block] getBBox] getDY]
+set height [ord::dbu_to_microns $height]
+set resolution [expr $height / 1000]
+set markerdb [[ord::get_db_block] findMarkerCategory DRC]
+if { $markerdb != "NULL" && [$markerdb getMarkerCount] > 0 } {
+  gui::select_marker_category $markerdb
+}
+gui::clear_highlights -1
+gui::clear_selections
+gui::fit
+# Setup initial visibility to avoid any previous settings
+gui::set_display_controls "*" visible false
+gui::set_display_controls "Layers/*" visible true
+gui::set_display_controls "Nets/*" visible true
+gui::set_display_controls "Instances/*" visible true
+gui::set_display_controls "Shape Types/*" visible true
+gui::set_display_controls "Misc/Instances/*" visible false
+gui::set_display_controls "Misc/Instances/Pins" visible true
+gui::set_display_controls "Misc/Instances/Blockages" visible true
+gui::set_display_controls "Misc/Scale bar" visible true
+gui::set_display_controls "Misc/Highlight selected" visible true
+gui::set_display_controls "Misc/Detailed view" visible true
+gui::clear_highlights -1
+gui::clear_selections
+
+# The routing congestion view
+gui::set_display_controls "Instances/*" visible true
+gui::set_display_controls "Instances/Physical/*" visible false
+gui::set_display_controls "Nets/*" visible false
+gui::set_display_controls "Heat Maps/Routing Congestion" visible true
+
+save_image -resolution $resolution $::env(REPORTS_DIR)/3_3_routing_congestion.webp
+
+gui::set_display_controls "Heat Maps/Estimated Congestion (RUDY)" visible true
+save_image -resolution $resolution $::env(REPORTS_DIR)/3_3_rudy.webp
+
+gui::restore_display_controls
