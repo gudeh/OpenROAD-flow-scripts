@@ -23,8 +23,8 @@ if { ![env_var_exists_and_non_empty FOOTPRINT] } {
 set global_placement_args {}
 
 # Parameters for routability mode in global placement
-# append_env_var global_placement_args GPL_ROUTABILITY_DRIVEN -routability_driven 0
-# lappend global_placement_args -routability_max_inflation_ratio 4
+append_env_var global_placement_args GPL_ROUTABILITY_DRIVEN -routability_driven 0
+lappend global_placement_args -routability_max_inflation_ratio 2
 lappend global_placement_args -enable_routing_congestion
 
 
