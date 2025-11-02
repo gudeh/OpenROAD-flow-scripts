@@ -100,7 +100,7 @@ endif
 OPENROAD_IS_VALID := $(if $(OPENROAD_EXE),$(shell test -x $(OPENROAD_EXE) && echo "true"),)
 
 export OPENROAD_ARGS = -no_init -threads $(NUM_CORES) $(OR_ARGS)
-export OPENROAD_CMD = $(OPENROAD_EXE) -exit $(OPENROAD_ARGS)
+export OPENROAD_CMD = $(OPENROAD_EXE) -gui -exit $(OPENROAD_ARGS)
 export OPENROAD_NO_EXIT_CMD = $(OPENROAD_EXE) $(OPENROAD_ARGS)
 export OPENROAD_GUI_CMD = $(OPENROAD_EXE) -gui $(OR_ARGS)
 
