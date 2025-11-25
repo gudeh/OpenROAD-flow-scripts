@@ -60,8 +60,8 @@ if { [find_macros] != "" } {
   append_env_var additional_rtlmp_args RTLMP_FENCE_UY -fence_uy 1
 
   append additional_rtlmp_args " -target_util [place_density_with_lb_addon]"
-  append additional_rtlmp_args " -keep_clustering_data"
-  append additional_rtlmp_args " -create_regions_for_std_cells"
+ # append additional_rtlmp_args " -keep_clustering_data"
+#  append additional_rtlmp_args " -create_regions_for_std_cells"
 
   set all_args $additional_rtlmp_args
 
