@@ -45,7 +45,7 @@ proc do_placement { global_placement_args } {
 
   lappend all_args {*}[env_var_or_empty GLOBAL_PLACEMENT_ARGS]
 
-global_placement_debug -generate_images -pause 5000 -update 5000
+  #global_placement_debug -generate_images -pause 5000 -update 5000
   log_cmd global_placement {*}$all_args
 }
 
