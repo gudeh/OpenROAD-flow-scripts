@@ -33,6 +33,10 @@ if { $::env(GPL_TIMING_DRIVEN) } {
   }
 }
 
+if { [info exists ::env(MIN_INFLATION)] } {
+  lappend global_placement_args -routability_min_inflation_ratio $::env(MIN_INFLATION)
+}
+
 proc do_placement { global_placement_args } {
   set all_args [concat [list -density [place_density_with_lb_addon] \
     -pad_left $::env(CELL_PAD_IN_SITES_GLOBAL_PLACEMENT) \
@@ -41,7 +45,7 @@ proc do_placement { global_placement_args } {
 
   lappend all_args {*}[env_var_or_empty GLOBAL_PLACEMENT_ARGS]
 
-  global_placement_debug -pause 50 -update 50 -update_db
+global_placement_debug -generate_images -pause 5000 -update 5000
   log_cmd global_placement {*}$all_args
 }
 
