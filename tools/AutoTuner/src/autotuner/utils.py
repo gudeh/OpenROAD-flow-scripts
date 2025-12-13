@@ -40,10 +40,10 @@ import re
 import yaml
 import subprocess
 import sys
+import uuid
+import time
 from multiprocessing import cpu_count
 from datetime import datetime
-from uuid import uuid4 as uuid
-from time import time
 
 import numpy as np
 import ray
@@ -307,8 +307,14 @@ def openroad(
             base_dir, f"flow/reports/{args.platform}/{args.design}", flow_variant
         )
     )
+    results_path = os.path.abspath(
+        os.path.join(
+            base_dir, f"flow/results/{args.platform}/{args.design}", flow_variant
+        )
+    )
     os.makedirs(log_path, exist_ok=True)
     os.makedirs(report_path, exist_ok=True)
+    os.makedirs(results_path, exist_ok=True)
 
     if install_path is None:
         install_path = os.path.join(base_dir, "tools/install")
@@ -318,12 +324,17 @@ def openroad(
     export_command += " && "
 
     make_command = export_command
+    if args.memory_limit is not None:
+        limit = int(args.memory_limit * 1_000_000)
+        make_command += f"ulimit -v {limit}; "
     make_command += f"make -C {base_dir}/flow DESIGN_CONFIG=designs/"
     make_command += f"{args.platform}/{args.design}/config.mk"
     make_command += f" PLATFORM={args.platform}"
     make_command += f" FLOW_VARIANT={flow_variant} {parameters}"
     make_command += " EQUIVALENCE_CHECK=0"
     make_command += f" NUM_CORES={args.openroad_threads} SHELL=bash"
+    if args.stop_stage != "finish":
+        make_command += f" {args.stop_stage}"
     run_command(
         args,
         make_command,
@@ -332,12 +343,15 @@ def openroad(
         stdout_file=os.path.join(log_path, "make-finish-stdout.log"),
     )
 
-    metrics_file = os.path.abspath(os.path.join(report_path, "metrics.json"))
+    metrics_file = os.path.abspath(os.path.join(log_path, "metrics.json"))
     metrics_command = export_command
     metrics_command += f"{base_dir}/flow/util/genMetrics.py -x"
     metrics_command += f" -v {flow_variant}"
     metrics_command += f" -d {args.design}"
     metrics_command += f" -p {args.platform}"
+    metrics_command += f" --logs {log_path}"
+    metrics_command += f" --reports {report_path}"
+    metrics_command += f" --results {results_path}"
     metrics_command += f" -o {metrics_file}"
     run_command(
         args,
@@ -349,22 +363,29 @@ def openroad(
     return metrics_file
 
 
-def read_metrics(file_name):
+def read_metrics(file_name, stop_stage):
     """
     Collects metrics to evaluate the user-defined objective function.
+
+    stop_stage indicates the last stage executed, so get most of the metrics
+    from that stage. The default stop stage is "finish". But if the run stops
+    before "finish", then no need to extract the metrics from the route stage,
+    so set them to 0
     """
     with open(file_name) as file:
         data = json.load(file)
     clk_period = 9999999
     worst_slack = "ERR"
-    wirelength = "ERR"
-    num_drc = "ERR"
     total_power = "ERR"
     core_util = "ERR"
     final_util = "ERR"
     design_area = "ERR"
     die_area = "ERR"
     core_area = "ERR"
+    if stop_stage != "finish":
+        num_drc = wirelength = 0
+    else:
+        num_drc = wirelength = "ERR"
     for stage_name, value in data.items():
         if stage_name == "constraints" and len(value["clocks__details"]) > 0:
             clk_period = float(value["clocks__details"][0].split()[1])
@@ -374,17 +395,17 @@ def read_metrics(file_name):
             num_drc = value["route__drc_errors"]
         if stage_name == "detailedroute" and "route__wirelength" in value:
             wirelength = value["route__wirelength"]
-        if stage_name == "finish" and "timing__setup__ws" in value:
+        if stage_name == stop_stage and "timing__setup__ws" in value:
             worst_slack = value["timing__setup__ws"]
-        if stage_name == "finish" and "power__total" in value:
+        if stage_name == stop_stage and "power__total" in value:
             total_power = value["power__total"]
-        if stage_name == "finish" and "design__instance__utilization" in value:
+        if stage_name == stop_stage and "design__instance__utilization" in value:
             final_util = value["design__instance__utilization"]
-        if stage_name == "finish" and "design__instance__area" in value:
+        if stage_name == stop_stage and "design__instance__area" in value:
             design_area = value["design__instance__area"]
-        if stage_name == "finish" and "design__core__area" in value:
+        if stage_name == stop_stage and "design__core__area" in value:
             core_area = value["design__core__area"]
-        if stage_name == "finish" and "design__die__area" in value:
+        if stage_name == stop_stage and "design__die__area" in value:
             die_area = value["design__die__area"]
     ret = {
         "clk_period": clk_period,
@@ -432,40 +453,48 @@ def read_config(file_name, mode, algorithm):
         # algorithms should take different methods (will be added)
         if algorithm != "random":
             return config
-        dp_pad_min = data["CELL_PAD_IN_SITES_DETAIL_PLACEMENT"]["minmax"][0]
-        dp_pad_step = data["CELL_PAD_IN_SITES_DETAIL_PLACEMENT"]["step"]
-        if dp_pad_step == 1:
-            config["CELL_PAD_IN_SITES_DETAIL_PLACEMENT"] = tune.sample_from(
-                lambda spec: np.random.randint(
-                    dp_pad_min, spec.config.CELL_PAD_IN_SITES_GLOBAL_PLACEMENT + 1
+        if "CELL_PAD_IN_SITES_DETAIL_PLACEMENT" in data:
+            dp_pad_min = data["CELL_PAD_IN_SITES_DETAIL_PLACEMENT"]["minmax"][0]
+            dp_pad_step = data["CELL_PAD_IN_SITES_DETAIL_PLACEMENT"]["step"]
+            if dp_pad_step == 1:
+                config["CELL_PAD_IN_SITES_DETAIL_PLACEMENT"] = tune.sample_from(
+                    lambda spec: np.random.randint(
+                        dp_pad_min, spec.config.CELL_PAD_IN_SITES_GLOBAL_PLACEMENT + 1
+                    )
                 )
-            )
-        if dp_pad_step > 1:
-            config["CELL_PAD_IN_SITES_DETAIL_PLACEMENT"] = tune.sample_from(
-                lambda spec: random.randrange(
-                    dp_pad_min,
-                    spec.config.CELL_PAD_IN_SITES_GLOBAL_PLACEMENT + 1,
-                    dp_pad_step,
+            if dp_pad_step > 1:
+                config["CELL_PAD_IN_SITES_DETAIL_PLACEMENT"] = tune.sample_from(
+                    lambda spec: random.randrange(
+                        dp_pad_min,
+                        spec.config.CELL_PAD_IN_SITES_GLOBAL_PLACEMENT + 1,
+                        dp_pad_step,
+                    )
                 )
-            )
         return config
 
     def read_tune(this):
         from ray import tune
 
-        min_, max_ = this["minmax"]
-        if min_ == max_:
-            # Returning a choice of a single element allow pbt algorithm to
-            # work. pbt does not accept single values as tunable.
-            return tune.choice([min_, max_])
-        if this["type"] == "int":
-            if this["step"] == 1:
-                return tune.randint(min_, max_)
-            return tune.choice(np.ndarray.tolist(np.arange(min_, max_, this["step"])))
-        if this["type"] == "float":
-            if this["step"] == 0:
-                return tune.uniform(min_, max_)
-            return tune.choice(np.ndarray.tolist(np.arange(min_, max_, this["step"])))
+        if "minmax" in this:
+            min_, max_ = this["minmax"]
+            if min_ == max_:
+                # Returning a choice of a single element allow pbt algorithm to
+                # work. pbt does not accept single values as tunable.
+                return tune.choice([min_, max_])
+            if this["type"] == "int":
+                if this["step"] == 1:
+                    return tune.randint(min_, max_)
+                return tune.choice(
+                    np.ndarray.tolist(np.arange(min_, max_, this["step"]))
+                )
+            if this["type"] == "float":
+                if this["step"] == 0:
+                    return tune.uniform(min_, max_)
+                return tune.choice(
+                    np.ndarray.tolist(np.arange(min_, max_, this["step"]))
+                )
+        if this["type"] == "string":
+            return tune.choice(this["values"])
         return None
 
     def read_tune_ax(name, this):
@@ -475,33 +504,41 @@ def read_config(file_name, mode, algorithm):
         from ray import tune
 
         dict_ = dict(name=name)
-        if "minmax" not in this:
-            return None
-        min_, max_ = this["minmax"]
-        if min_ == max_:
-            dict_["type"] = "fixed"
-            dict_["value"] = min_
-        elif this["type"] == "int":
-            if this["step"] == 1:
-                dict_["type"] = "range"
-                dict_["bounds"] = [min_, max_]
-                dict_["value_type"] = "int"
+        if "minmax" in this:
+            min_, max_ = this["minmax"]
+            if min_ == max_:
+                dict_["type"] = "fixed"
+                dict_["value"] = min_
+            elif this["type"] == "int":
+                if this["step"] == 1:
+                    dict_["type"] = "range"
+                    dict_["bounds"] = [min_, max_]
+                    dict_["value_type"] = "int"
+                else:
+                    dict_["type"] = "choice"
+                    dict_["values"] = tune.randint(min_, max_, this["step"])
+                    dict_["value_type"] = "int"
+            elif this["type"] == "float":
+                if this["step"] == 1:
+                    dict_["type"] = "choice"
+                    dict_["values"] = tune.choice(
+                        np.ndarray.tolist(np.arange(min_, max_, this["step"]))
+                    )
+                    dict_["value_type"] = "float"
+                else:
+                    dict_["type"] = "range"
+                    dict_["bounds"] = [min_, max_]
+                    dict_["value_type"] = "float"
+            return dict_
+        if "values" in this:
+            dict_["type"] = "choice"
+            dict_["values"] = this["values"]
+            if this["type"] == "string":
+                dict_["value_type"] = "str"
             else:
-                dict_["type"] = "choice"
-                dict_["values"] = tune.randint(min_, max_, this["step"])
-                dict_["value_type"] = "int"
-        elif this["type"] == "float":
-            if this["step"] == 1:
-                dict_["type"] = "choice"
-                dict_["values"] = tune.choice(
-                    np.ndarray.tolist(np.arange(min_, max_, this["step"]))
-                )
-                dict_["value_type"] = "float"
-            else:
-                dict_["type"] = "range"
-                dict_["bounds"] = [min_, max_]
-                dict_["value_type"] = "float"
-        return dict_
+                dict_["value_type"] = this["type"]
+            return dict_
+        return None
 
     def read_tune_pbt(name, this):
         """
@@ -510,15 +547,17 @@ def read_config(file_name, mode, algorithm):
         """
         from ray import tune
 
-        if "minmax" not in this:
-            return None
-        min_, max_ = this["minmax"]
-        if min_ == max_:
-            return tune.choice([min_, max_])
-        if this["type"] == "int":
-            return tune.randint(min_, max_)
-        if this["type"] == "float":
-            return tune.uniform(min_, max_)
+        if "minmax" in this:
+            min_, max_ = this["minmax"]
+            if min_ == max_:
+                return tune.choice([min_, max_])
+            if this["type"] == "int":
+                return tune.randint(min_, max_)
+            if this["type"] == "float":
+                return tune.uniform(min_, max_)
+        if "values" in this:
+            return tune.choice(this["values"])
+        return None
 
     # Check file exists and whether it is a valid JSON file.
     assert os.path.isfile(file_name), f"File {file_name} not found."
@@ -571,91 +610,25 @@ def read_config(file_name, mode, algorithm):
     return config, sdc_file, fr_file
 
 
-def clone(args, path):
-    """
-    Clone base repo in the remote machine. Only used for Kubernetes at GCP.
-    """
-    if args.git_clone:
-        run_command(args, f"rm -rf {path}")
-    if not os.path.isdir(f"{path}/.git"):
-        git_command = "git clone --depth 1 --recursive --single-branch"
-        git_command += f" {args.git_clone_args}"
-        git_command += f" --branch {args.git_orfs_branch}"
-        git_command += f" {args.git_url} {path}"
-        run_command(args, git_command)
-
-
-def build(args, base, install):
-    """
-    Build OpenROAD, Yosys and other dependencies.
-    """
-    build_command = f'cd "{base}"'
-    if args.git_clean:
-        build_command += " && git clean -xdf tools"
-        build_command += " && git submodule foreach --recursive git clean -xdf"
-    if (
-        args.git_clean
-        or not os.path.isfile(f"{install}/OpenROAD/bin/openroad")
-        or not os.path.isfile(f"{install}/yosys/bin/yosys")
-    ):
-        build_command += ' && bash -ic "./build_openroad.sh'
-        # Some GCP machines have 200+ cores. Let's be reasonable...
-        build_command += f" --local --nice --threads {min(32, cpu_count())}"
-        if args.git_latest:
-            build_command += " --latest"
-        build_command += f' {args.build_args}"'
-    run_command(args, build_command)
-
-
-@ray.remote
-def setup_repo(args, base):
-    """
-    Clone ORFS repository and compile binaries.
-    """
-    print(f"[INFO TUN-0000] Remote folder: {base}")
-    install = f"{base}/tools/install"
-    if args.server is not None:
-        clone(base)
-    build(base, install)
-    return install
-
-
 def prepare_ray_server(args):
     """
     Prepares Ray server and returns basic directories.
     """
     # Connect to remote Ray server if any, otherwise will run locally
     if args.server is not None:
-        # At GCP we have a NFS folder that is present for all worker nodes.
-        # This allows to build required binaries once. We clone, build and
-        # store intermediate files at LOCAL_DIR.
-        with open(args.config) as config_file:
-            local_dir = "/shared-data/autotuner"
-            local_dir += f"-orfs-{args.git_orfs_branch}"
-            if args.git_or_branch != "":
-                local_dir += f"-or-{args.git_or_branch}"
-            if args.git_latest:
-                local_dir += "-or-latest"
         # Connect to ray server before first remote execution.
         ray.init(f"ray://{args.server}:{args.port}")
-        # Remote functions return a task id and are non-blocking. Since we
-        # need the setup repo before continuing, we call ray.get() to wait
-        # for its completion.
-        install_path = ray.get(setup_repo.remote(local_dir))
-        orfs_flow_dir = os.path.join(local_dir, "flow")
-        local_dir += f"/flow/logs/{args.platform}/{args.design}"
-        print("[INFO TUN-0001] NFS setup completed.")
-    else:
-        orfs_dir = getattr(args, "orfs", None)
-        # For local runs, use the same folder as other ORFS utilities.
-        orfs_flow_dir = os.path.abspath(
-            os.path.join(orfs_dir, "flow")
-            if orfs_dir
-            else os.path.join(os.path.dirname(__file__), "../../../../flow")
-        )
-        local_dir = f"logs/{args.platform}/{args.design}"
-        local_dir = os.path.join(orfs_flow_dir, local_dir)
-        install_path = os.path.abspath(os.path.join(orfs_flow_dir, "../tools/install"))
+        print("[INFO TUN-0001] Connected to Ray server.")
+    # Common variables used for local and remote runs.
+    orfs_dir = getattr(args, "orfs", None)
+    orfs_flow_dir = os.path.abspath(
+        os.path.join(orfs_dir, "flow")
+        if orfs_dir
+        else os.path.join(os.path.dirname(__file__), "../../../../flow")
+    )
+    local_dir = f"logs/{args.platform}/{args.design}"
+    local_dir = os.path.join(orfs_flow_dir, local_dir)
+    install_path = os.path.abspath(os.path.join(orfs_flow_dir, "../tools/install"))
     return local_dir, orfs_flow_dir, install_path
 
 
@@ -681,15 +654,15 @@ def openroad_distributed(
     )
     if variant is None:
         variant = config.replace(" ", "_").replace("=", "_")
-    t = time()
+    t = time.time()
     metric_file = openroad(
         args=args,
         base_dir=repo_dir,
         parameters=config,
-        flow_variant=f"{uuid()}-{variant}",
+        flow_variant=f"{uuid.uuid4()}-{variant}" if variant else f"{uuid.uuid4()}",
         install_path=install_path,
     )
-    duration = time() - t
+    duration = time.time() - t
     return metric_file, duration
 
 

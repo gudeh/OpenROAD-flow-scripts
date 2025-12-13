@@ -1,3 +1,4 @@
+# Set arithmetic operator modules. Default is the first module in the list.
 set deferred_cells {
   {
     \$alu
@@ -10,12 +11,46 @@ set deferred_cells {
   {
     \$macc
     MACC_{CONFIG}_{Y_WIDTH}{%unused}
-    {BASE -map +/choices/han-carlson.v}
     {BOOTH -max_iter 1 -map ../flow/scripts/synth_wrap_operators-booth.v}
+    {BASE -map +/choices/han-carlson.v}
   }
 }
 
-techmap {*}[join [lmap cell $deferred_cells {string cat "-dont_map [lindex $cell 0]"}] " "]
+# Reorder the modules based on envar
+proc reorder_deferred_cells { deferred_cells_var index env_var } {
+  upvar $deferred_cells_var deferred_cells
+
+  if { ![info exists ::env($env_var)] } {
+    return
+  }
+
+  set cell_def [lindex $deferred_cells $index]
+
+  # Build lookup dict
+  set choice_map {}
+  foreach choice [lrange $cell_def 2 end] {
+    dict set choice_map [lindex $choice 0] $choice
+  }
+
+  # Build new choices
+  set new_choices {}
+  foreach name [split $::env($env_var) ","] {
+    if { [dict exists $choice_map $name] } {
+      lappend new_choices [dict get $choice_map $name]
+    } else {
+      puts "Warning: Unknown choice '$name' ignored for $env_var"
+    }
+  }
+
+  # Replace cell
+  lset deferred_cells $index [linsert $new_choices 0 {*}[lrange $cell_def 0 1]]
+}
+
+# Apply custom orders
+reorder_deferred_cells deferred_cells 0 SYNTH_WRAPPED_ADDERS
+reorder_deferred_cells deferred_cells 1 SYNTH_WRAPPED_MULTIPLIERS
+
+techmap {*}[join [lmap cell $deferred_cells { string cat "-dont_map [lindex $cell 0]" }] " "]
 
 foreach info $deferred_cells {
   set type [lindex $info 0]
@@ -37,7 +72,7 @@ foreach info $deferred_cells {
     t:$type r:A_WIDTH>=10 r:Y_WIDTH>=14 %i %i
 
   # make per-architecture copies of the unmapped module
-  foreach modname [tee -q -s result.string select -list-mod A:arithmetic_operator A:copy_pending %i] {
+  foreach modname [tee -q -s result.string select -list-mod A:arithmetic_operator A:copy_pending %i] { # tclint-disable-line line-length
     setattr -mod -unset copy_pending $modname
 
     # iterate over non-default architectures
@@ -53,7 +88,7 @@ foreach info $deferred_cells {
   # iterate over all architectures, both the default and non-default
   foreach arch [lrange $info 2 end] {
     set suffix [lindex $arch 0]
-    set extra_map_args [lrange $arch 1 end] 
+    set extra_map_args [lrange $arch 1 end]
 
     # map all operator copies which were selected to have this architecture
     techmap -map +/techmap.v {*}$extra_map_args A:source_cell=$type A:architecture=$suffix %i

@@ -52,10 +52,13 @@ export IO_CONSTRAINTS     = $(DESIGN_HOME)/$(PLATFORM)/ca53/io.tcl
 
 export MACRO_PLACE_HALO = 7 7
 
-export MACRO_WRAPPERS = $(dir $(DESIGN_CONFIG))/wrappers.tcl
+export MACRO_WRAPPERS = $(DESIGN_DIR)/wrappers.tcl
+
+# Temporarily disable NDR for clock nets
+export CTS_ARGS = -sink_clustering_enable -repair_clock_nets -distance_between_buffers 100 -apply_ndr none
 
 #export MAX_ROUTING_LAYER = H2 
-export FASTROUTE_TCL = $(dir $(DESIGN_CONFIG))/fastroute.tcl
+export FASTROUTE_TCL = $(DESIGN_DIR)/fastroute.tcl
 #
 ifeq ($(USE_FILL),1)
 export DESIGN_TYPE = CELL

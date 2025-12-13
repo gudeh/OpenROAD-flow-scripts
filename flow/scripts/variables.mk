@@ -3,26 +3,15 @@
 # lazy evaluation, conditional code, include statements,
 # etc.
 
-# Setup variables to point to root / head of the OpenROAD directory
-# - the following settings allowed user to point OpenROAD binaries to different
-#   location
-# - default is current install / clone directory
-ifeq ($(origin FLOW_HOME), undefined)
-FLOW_HOME := $(abspath $(dir $(firstword $(MAKEFILE_LIST)))/..)
-endif
-export FLOW_HOME
-
 export DESIGN_NICKNAME?=$(DESIGN_NAME)
 
 #-------------------------------------------------------------------------------
 # Setup variables to point to other location for the following sub directory
 # - designs - default is under current directory
 # - platforms - default is under current directory
-# - work home - default is current directory
 # - utils, scripts, test - default is under current directory
 export DESIGN_HOME   ?= $(FLOW_HOME)/designs
 export PLATFORM_HOME ?= $(FLOW_HOME)/platforms
-export WORK_HOME     ?= .
 
 export UTILS_DIR     ?= $(FLOW_HOME)/util
 export SCRIPTS_DIR   ?= $(FLOW_HOME)/scripts
@@ -31,10 +20,10 @@ export TEST_DIR      ?= $(FLOW_HOME)/test
 PUBLIC=nangate45 sky130hd sky130hs asap7 ihp-sg13g2 gf180
 
 ifeq ($(origin PLATFORM), undefined)
-  $(error PLATFORM variable net set.)
+  $(error PLATFORM variable not set.)
 endif
 ifeq ($(origin DESIGN_NAME), undefined)
-  $(error DESIGN_NAME variable net set.)
+  $(error DESIGN_NAME variable not set.)
 endif
 
 ifneq ($(PLATFORM_DIR),)
@@ -52,7 +41,7 @@ include $(PLATFORM_DIR)/config.mk
 
 # __SPACE__ is a workaround for whitespace hell in "foreach"; there
 # is no way to escape space in defaults.py and get "foreach" to work.
-$(foreach line,$(shell $(SCRIPTS_DIR)/defaults.py),$(eval export $(subst __SPACE__, ,$(line))))
+$(foreach line,$(shell $(PYTHON_EXE) $(SCRIPTS_DIR)/defaults.py),$(eval export $(subst __SPACE__, ,$(line))))
 
 export LOG_DIR     = $(WORK_HOME)/logs/$(PLATFORM)/$(DESIGN_NICKNAME)/$(FLOW_VARIANT)
 export OBJECTS_DIR = $(WORK_HOME)/objects/$(PLATFORM)/$(DESIGN_NICKNAME)/$(FLOW_VARIANT)
@@ -81,6 +70,8 @@ export NUM_CORES
 
 #-------------------------------------------------------------------------------
 # setup all commands used within this flow
+export PYTHON_EXE ?= $(shell command -v python3)
+
 export TIME_BIN   ?= env time
 TIME_CMD = $(TIME_BIN) -f 'Elapsed time: %E[h:]min:sec. CPU time: user %U sys %S (%P). Peak memory: %MKB.'
 TIME_TEST = $(shell $(TIME_CMD) echo foo 2>/dev/null)
@@ -92,17 +83,21 @@ export TIME_CMD
 # The following determine the executable location for each tool used by this flow.
 # Priority is given to
 #       1 user explicit set with variable in Makefile or command line, for instance setting OPENROAD_EXE
-#       2 ORFS compiled tools: openroad, yosys
+#       2 either
+#          2.1 if in Nix shell: openroad, yosys from the environment
+#          2.2 ORFS compiled tools: openroad, yosys
 ifneq (${IN_NIX_SHELL},)
-  export OPENROAD_EXE := $(shell command -v openroad)
+  export OPENROAD_EXE ?= $(shell command -v openroad)
 else
   export OPENROAD_EXE ?= $(abspath $(FLOW_HOME)/../tools/install/OpenROAD/bin/openroad)
 endif
 ifneq (${IN_NIX_SHELL},)
-  export OPENSTA_EXE := $(shell command -v sta)
+  export OPENSTA_EXE ?= $(shell command -v sta)
 else
   export OPENSTA_EXE ?= $(abspath $(FLOW_HOME)/../tools/install/OpenROAD/bin/sta)
 endif
+
+OPENROAD_IS_VALID := $(if $(OPENROAD_EXE),$(shell test -x $(OPENROAD_EXE) && echo "true"),)
 
 export OPENROAD_ARGS = -no_init -threads $(NUM_CORES) $(OR_ARGS)
 export OPENROAD_CMD = $(OPENROAD_EXE) -exit $(OPENROAD_ARGS)
@@ -110,24 +105,25 @@ export OPENROAD_NO_EXIT_CMD = $(OPENROAD_EXE) $(OPENROAD_ARGS)
 export OPENROAD_GUI_CMD = $(OPENROAD_EXE) -gui $(OR_ARGS)
 
 ifneq (${IN_NIX_SHELL},)
-  YOSYS_EXE := $(shell command -v yosys)
+  YOSYS_EXE ?= $(shell command -v yosys)
 else
   YOSYS_EXE ?= $(abspath $(FLOW_HOME)/../tools/install/yosys/bin/yosys)
 endif
 export YOSYS_EXE
+
+YOSYS_IS_VALID := $(if $(YOSYS_EXE),$(shell test -x $(YOSYS_EXE) && echo "true"),)
 
 # Use locally installed and built klayout if it exists, otherwise use klayout in path
 KLAYOUT_DIR = $(abspath $(FLOW_HOME)/../tools/install/klayout/)
 KLAYOUT_BIN_FROM_DIR = $(KLAYOUT_DIR)/klayout
 
 ifeq ($(wildcard $(KLAYOUT_BIN_FROM_DIR)), $(KLAYOUT_BIN_FROM_DIR))
-KLAYOUT_CMD ?= sh -c 'LD_LIBRARY_PATH=$(dir $(KLAYOUT_BIN_FROM_DIR)) $$0 "$$@"' $(KLAYOUT_BIN_FROM_DIR)
+export KLAYOUT_CMD ?= sh -c 'LD_LIBRARY_PATH=$(dir $(KLAYOUT_BIN_FROM_DIR)) $$0 "$$@"' $(KLAYOUT_BIN_FROM_DIR)
 else
 ifeq ($(KLAYOUT_CMD),)
-KLAYOUT_CMD := $(shell command -v klayout)
+export KLAYOUT_CMD := $(shell command -v klayout)
 endif
 endif
-KLAYOUT_FOUND            = $(if $(KLAYOUT_CMD),,$(error KLayout not found in PATH))
 
 ifneq ($(shell command -v stdbuf),)
   STDBUF_CMD ?= stdbuf -o L
@@ -138,9 +134,6 @@ WRAPPED_LEFS = $(foreach lef,$(notdir $(WRAP_LEFS)),$(OBJECTS_DIR)/lef/$(lef:.le
 WRAPPED_LIBS = $(foreach lib,$(notdir $(WRAP_LIBS)),$(OBJECTS_DIR)/$(lib:.lib=_mod.lib))
 export ADDITIONAL_LEFS += $(WRAPPED_LEFS) $(WRAP_LEFS)
 export LIB_FILES += $(WRAP_LIBS) $(WRAPPED_LIBS)
-
-export DONT_USE_LIBS   = $(patsubst %.lib.gz, %.lib, $(addprefix $(OBJECTS_DIR)/lib/, $(notdir $(LIB_FILES))))
-export DONT_USE_SC_LIB ?= $(firstword $(DONT_USE_LIBS))
 
 # Stream system used for final result (GDS is default): GDS, GSDII, GDS2, OASIS, or OAS
 STREAM_SYSTEM ?= GDS
@@ -170,7 +163,7 @@ export TCLLIBPATH := util/cell-veneer $(TCLLIBPATH)
 export SYNTH_SCRIPT ?= $(SCRIPTS_DIR)/synth.tcl
 export SDC_FILE_CLOCK_PERIOD = $(RESULTS_DIR)/clock_period.txt
 
-export YOSYS_DEPENDENCIES=$(DONT_USE_LIBS) $(WRAPPED_LIBS) $(DFF_LIB_FILE) $(VERILOG_FILES) $(SYNTH_NETLIST_FILES) $(LATCH_MAP_FILE) $(ADDER_MAP_FILE) $(SDC_FILE_CLOCK_PERIOD)
+export YOSYS_DEPENDENCIES=$(LIB_FILES) $(WRAPPED_LIBS) $(DFF_LIB_FILE) $(VERILOG_FILES) $(SYNTH_NETLIST_FILES) $(LATCH_MAP_FILE) $(ADDER_MAP_FILE) $(SDC_FILE_CLOCK_PERIOD)
 
 # Ubuntu 22.04 ships with older than 0.28.11, so support older versions
 # for a while still.
@@ -221,4 +214,16 @@ vars:
 
 .PHONY: print-%
 # Print any variable, for instance: make print-DIE_AREA
-print-%  : ; @echo "$* = $($*)"
+print-%:
+  # HERE BE DRAGONS!
+  #
+  # We have to use /tmp. $(OBJECTS_DIR) may not exist
+  # at $(file) expansion time, which is before commands are run
+  # here, so we can't mkdir -p $(OBJECTS_DIR) either
+  #
+  # We have to use $(file ...) because we want to be able
+  # to print variables that contain newlines.
+	$(file >/tmp/print_tmp$$,$($*))
+	@echo -n "$* = "
+	@cat /tmp/print_tmp$$
+	@rm /tmp/print_tmp$$

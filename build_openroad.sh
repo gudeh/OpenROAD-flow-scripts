@@ -21,7 +21,7 @@ OPENROAD_APP_BRANCH="master"
 INSTALL_PATH="$(pwd)/tools/install"
 
 YOSYS_USER_ARGS=""
-YOSYS_ARGS="CONFIG=clang"
+YOSYS_ARGS=""
 
 OPENROAD_APP_USER_ARGS=""
 OPENROAD_APP_ARGS=""
@@ -48,6 +48,8 @@ Options:
 
     -l, --latest            Use the head of branch --or_branch or 'master'
                             by default for tools/OpenROAD.
+
+    -s, --skip_openroad     Skip building and all git operations on OpenROAD.
 
     --or_branch BRANCH_NAME Use the head of branch BRANCH for tools/OpenROAD.
 
@@ -106,6 +108,9 @@ while (( "$#" )); do
                         ;;
                 -l|--latest)
                         USE_OPENROAD_APP_LATEST=1
+                        ;;
+                -s|--skip_openroad)
+                        SKIP_OPENROAD=1
                         ;;
                 --or_branch)
                         OPENROAD_APP_BRANCH="$2"
@@ -237,6 +242,12 @@ __local_build()
             set -u
         fi
 
+        if [ -z "${SKIP_OPENROAD+x}" ]; then
+            echo "[INFO FLW-0018] Compiling OpenROAD."
+            eval ${NICE} ./tools/OpenROAD/etc/Build.sh -dir="$DIR/tools/OpenROAD/build" -threads=${PROC} -cmake=\'${OPENROAD_APP_ARGS}\'
+            ${NICE} cmake --build tools/OpenROAD/build --target install -j "${PROC}"
+        fi
+
         YOSYS_ABC_PATH=tools/yosys/abc
         if [[ -d "${YOSYS_ABC_PATH}/.git" ]]; then
             # update indexes to make sure git diff-index uses correct data
@@ -246,9 +257,10 @@ __local_build()
         echo "[INFO FLW-0017] Compiling Yosys."
         ${NICE} make install -C tools/yosys -j "${PROC}" ${YOSYS_ARGS}
 
-        echo "[INFO FLW-0018] Compiling OpenROAD."
-        eval ${NICE} ./tools/OpenROAD/etc/Build.sh -dir="$DIR/tools/OpenROAD/build" -threads=${PROC} -cmake=\'${OPENROAD_APP_ARGS}\'
-        ${NICE} cmake --build tools/OpenROAD/build --target install -j "${PROC}"
+        echo "[INFO FLW-0030] Compiling yosys-slang."
+        # CMAKE_FLAGS added to work around yosys-slang#141 (unable to build outside of git checkout)
+        ${NICE} make install -C tools/yosys-slang -j "${PROC}" YOSYS_PREFIX="${INSTALL_PATH}/yosys/bin/" CMAKE_FLAGS="-DYOSYS_SLANG_REVISION=unknown -DSLANG_REVISION=unknown"
+
 }
 
 __update_openroad_app_remote()
@@ -298,7 +310,7 @@ __common_setup()
                 __change_openroad_app_remote
         fi
 
-        if [ ! -z "${USE_OPENROAD_APP_LATEST+x}" ] || [ "${OPENROAD_APP_BRANCH}" != "master" ]; then
+        if [ -z "${SKIP_OPENROAD+x}" ] &&  ( [ ! -z "${USE_OPENROAD_APP_LATEST+x}" ] || [ "${OPENROAD_APP_BRANCH}" != "master" ] ) ; then
                 echo -n "[INFO FLW-0004] Updating OpenROAD app to the HEAD"
                 echo "  of ${OPENROAD_APP_REMOTE}/${OPENROAD_APP_BRANCH}."
                 __update_openroad_app_latest
@@ -340,7 +352,7 @@ __common_setup
 
 # Choose install method
 if [ -z "${LOCAL_BUILD+x}" ] && command -v docker &> /dev/null; then
-        echo -n "[INFO FLW-0000] Using docker build method."
+        echo "[INFO FLW-0000] Using docker build method."
         __docker_build
 else
         echo -n "[INFO FLW-0001] Using local build method."

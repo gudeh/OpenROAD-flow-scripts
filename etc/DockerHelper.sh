@@ -33,6 +33,7 @@ usage: $0 [CMD] [OPTIONS]
   -password=PASSWORD            Password to loging at the docker registry.
   -ci                           Install CI tools in image
   -dry-run                      Do not push images to the repository
+  -push-latest                  Push the latest image to the repository
   -no-constant-build-dir        Do not use constant build directory
   -h -help                      Show this message and exits
 
@@ -64,6 +65,9 @@ _setup() {
             fromImage="${FROM_IMAGE_OVERRIDE:-"${org}/flow-${os}-dev"}:${imageTag}"
             context="."
             buildArgs="--build-arg numThreads=${numThreads}"
+            orVersion=$(git -C tools/OpenROAD describe --tags)
+            echo "OpenROAD version: ${orVersion}"
+            buildArgs+=" --build-arg openroadVersion=${orVersion}"
             ;;
         "dev" )
             fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
@@ -136,10 +140,22 @@ _push() {
         orfsTag=${org}/orfs:${tag}
         echo "Renaming docker image: ${builderTag} -> ${orfsTag}"
         ${DOCKER_CMD} tag ${builderTag} ${orfsTag}
+
         if [[ "${dryRun}" == 1 ]]; then
             echo "[DRY-RUN] ${DOCKER_CMD} push ${orfsTag}"
+            if [[ "${pushLatest}" == 1 ]]; then
+                echo "[DRY-RUN] ${DOCKER_CMD} tag ${orfsTag} \"${org}/orfs:latest\""
+                echo "[DRY-RUN] ${DOCKER_CMD} push \"${org}/orfs:latest\""
+            fi
         else
             ${DOCKER_CMD} push ${orfsTag}
+
+            # Only tag and push as latest if requested
+            if [[ "${pushLatest}" == 1 ]]; then
+                ${DOCKER_CMD} tag ${orfsTag} "${org}/orfs:latest"
+                ${DOCKER_CMD} push "${org}/orfs:latest"
+                echo "Tagged and pushed ${org}/orfs:latest"
+            fi
         fi
     fi
 }
@@ -174,6 +190,7 @@ numThreads="-1"
 tag=""
 options=""
 dryRun=0
+pushLatest=0
 
 while [ "$#" -gt 0 ]; do
     case "${1}" in
@@ -185,6 +202,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -dry-run )
             dryRun=1
+            ;;
+        -push-latest )
+            pushLatest=1
             ;;
         -os=* )
             os="${1#*=}"
