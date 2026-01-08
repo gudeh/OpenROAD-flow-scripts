@@ -102,7 +102,7 @@ OPENROAD_IS_VALID := $(if $(OPENROAD_EXE),$(shell test -x $(OPENROAD_EXE) && ech
 export OPENROAD_ARGS = -no_init -threads $(NUM_CORES) $(OR_ARGS)
 export OPENROAD_CMD = $(OPENROAD_EXE) -exit $(OPENROAD_ARGS)
 export OPENROAD_NO_EXIT_CMD = $(OPENROAD_EXE) $(OPENROAD_ARGS)
-export OPENROAD_GUI_CMD = $(OPENROAD_EXE) -gui $(OR_ARGS)
+export OPENROAD_GUI_CMD = $(OPENROAD_EXE) -exit -gui $(OR_ARGS)
 
 ifneq (${IN_NIX_SHELL},)
   YOSYS_EXE ?= $(shell command -v yosys)

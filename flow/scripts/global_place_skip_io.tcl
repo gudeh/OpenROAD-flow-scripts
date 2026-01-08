@@ -7,7 +7,11 @@ if { [env_var_exists_and_non_empty FLOORPLAN_DEF] } {
 } elseif { [all_pins_placed] } {
   puts "All pins are placed. Skipping global placement without IOs"
 } else {
-  log_cmd global_placement -skip_io -density [place_density_with_lb_addon] \
+ # global_placement_debug -generate_images -pause 5000 -update 5000
+  # set_debug_level GPL init 1
+ # set_debug_level GPL debugPlots 1
+
+  log_cmd global_placement -skip_io \
     -pad_left $::env(CELL_PAD_IN_SITES_GLOBAL_PLACEMENT) \
     -pad_right $::env(CELL_PAD_IN_SITES_GLOBAL_PLACEMENT) \
     {*}[env_var_or_empty GLOBAL_PLACEMENT_ARGS]

@@ -2,9 +2,17 @@
 set -u -eo pipefail
 mkdir -p $RESULTS_DIR $LOG_DIR $REPORTS_DIR $OBJECTS_DIR
 echo Running $2.tcl, stage $1
+
+# Use GUI for specific stages if GUI_STAGES is set
+OPENROAD_EXEC="$OPENROAD_CMD"
+if [[ -n "${GUI_STAGES:-}" ]] && [[ "$GUI_STAGES" =~ (^|,)$1(,|$) ]]; then
+  echo "Enabling GUI for stage $1"
+  OPENROAD_EXEC="$OPENROAD_GUI_CMD"
+fi
+
 (trap 'mv $LOG_DIR/$1.tmp.log $LOG_DIR/$1.log' EXIT; \
  $OPENROAD_EXE $OPENROAD_ARGS -exit $SCRIPTS_DIR/noop.tcl 2>&1 >$LOG_DIR/$1.tmp.log; \
- eval "$TIME_CMD $OPENROAD_CMD -no_splash $SCRIPTS_DIR/$2.tcl -metrics $LOG_DIR/$1.json" 2>&1 | \
+ eval "$TIME_CMD $OPENROAD_EXEC -no_splash $SCRIPTS_DIR/$2.tcl -metrics $LOG_DIR/$1.json" 2>&1 | \
  tee -a $(realpath $LOG_DIR/$1.tmp.log))
 # Log the hash for this step. The summary "make elapsed" in "make finish",
 # will not have all the .odb files for the bazel-orfs use-case.

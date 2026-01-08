@@ -11,23 +11,23 @@ CONFIG_MK=${3:-config.mk}
 if [ $# -ge 4 ]; then
   FLOW_VARIANT=$4
 fi
-TARGET=${5:-'finish metadata'}
+TARGET=${5:-'place metadata'}
 DESIGN_CONFIG=./designs/$PLATFORM/$DESIGN_NAME/$CONFIG_MK
 LOG_FILE=./logs/$PLATFORM/$DESIGN_NAME.log
 mkdir -p "./logs/$PLATFORM"
 
-__make="make DESIGN_CONFIG=$DESIGN_CONFIG"
+__make="make DESIGN_CONFIG=$DESIGN_CONFIG GUI_STAGES=3_1_place_gp_skip_io,3_3_place_gp"
 if [ -n "${FLOW_VARIANT+x}" ]; then
   __make+=" FLOW_VARIANT=$FLOW_VARIANT"
 fi
 
 mkdir -p "$(dirname "$LOG_FILE")"
-$__make clean_all clean_metadata 2>&1 | tee "$LOG_FILE"
+$__make clean_place clean_metadata 2>&1 | tee "$LOG_FILE"
 
 # turn off abort on error so we can always capture the result
 set +e
 
-eval $__make "${TARGET}" 2>&1 | tee -a "$LOG_FILE"
+eval $__make "place" 2>&1 | tee -a "$LOG_FILE"
 
 # Save the return code to return as the overall status after we package
 # the results
